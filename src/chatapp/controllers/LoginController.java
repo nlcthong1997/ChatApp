@@ -5,29 +5,37 @@
  */
 package chatapp.controllers;
 import chatapp.common.FileCommon;
+import chatapp.common.Server;
 import chatapp.model.User;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import static java.util.stream.Collectors.toList;
 /**
  *
  * @author Dell
  */
 public class LoginController {
-    public static void login() throws IOException, FileNotFoundException, ClassNotFoundException {
+    public User login(String username, String password) throws IOException, FileNotFoundException, ClassNotFoundException {
+        //get list user from file
         List<User> users = new ArrayList();
-        for (int i = 0; i <= 5; i++) {
-            User user = new User("chithong" + String.valueOf(i), "123456");
-            users.add(user);
+        users = FileCommon.readUsersFile("data.txt");
+        //check user
+        List<User> result = new ArrayList();
+        result = users.stream()
+            .filter(user -> (user.username.equals(username) && user.password.equals(password)))
+            .collect(toList());
+        if (result.size() == 1) {
+            //start server
+            System.out.println(Server.running);
+            Ser
+            if (!Server.running) {
+                Server server = new Server(12345);
+                server.start();
+            }
+            return result.get(0);
         }
-        FileCommon.writeFile("data.txt", users);
-        
-        List<User> users1 = new ArrayList();
-        users1 = FileCommon.readFile("data.txt");
-        for (User user : users1) {
-            System.out.println(user.getUsername());
-            System.out.println(user.getPassword());
-        }
+        return null;
     }
 }

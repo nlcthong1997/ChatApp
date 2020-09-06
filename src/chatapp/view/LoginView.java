@@ -6,9 +6,11 @@
 package chatapp.view;
 
 import chatapp.controllers.LoginController;
+import chatapp.model.User;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 /**
  *
  * @author Dell
@@ -110,17 +112,28 @@ public class LoginView extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btn_dang_nhapActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_dang_nhapActionPerformed
-        // TODO add your handling code here:'
-        String taiKhoan = txt_tai_khoan.getText();
-        String matKhau = txt_mat_khau.getText();
-        if (taiKhoan.equals("") || matKhau.equals("")) {
-            //return
-        }
-        try {
-            LoginController.login();
+       try {
+            String username = txt_tai_khoan.getText();
+            String password = txt_mat_khau.getText();
+            if (username.equals("") || password.equals("")) {
+                JOptionPane.showMessageDialog(null, "Please enter username or password",
+                        "Login fail", JOptionPane.WARNING_MESSAGE);
+            }
+
+            LoginController loginController = new LoginController();
+            User user = loginController.login(username, password);
+            
+            if (user.equals(null)) {
+                JOptionPane.showMessageDialog(null, "Please username or password is valid",
+                        "Login fail", JOptionPane.WARNING_MESSAGE);
+            }
+            
         } catch (IOException ex) {
             Logger.getLogger(LoginView.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(LoginView.class.getName()).log(Level.SEVERE, null, ex);
         }
+        
     }//GEN-LAST:event_btn_dang_nhapActionPerformed
 
     /**

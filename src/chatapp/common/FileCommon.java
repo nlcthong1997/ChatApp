@@ -20,13 +20,13 @@ import java.util.ArrayList;
  * @author Dell
  */
 public class FileCommon {
-    public static void writeFile(String fileName, List<User> users) throws FileNotFoundException, IOException {
+    public static void writeUsersFile(String fileName, List<User> users) throws FileNotFoundException, IOException {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(fileName))) {
             oos.writeObject(users);
         }
     }
     
-    public static List<User> readFile(String fileName) throws FileNotFoundException, IOException, ClassNotFoundException {
+    public static List<User> readUsersFile(String fileName) throws FileNotFoundException, IOException, ClassNotFoundException {
         List<User> users = new ArrayList();
         ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fileName));
         users = (List<User>) ois.readObject();
