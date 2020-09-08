@@ -4,11 +4,14 @@
  * and open the template in the editor.
  */
 package chatapp.controllers;
+
 import chatapp.common.FileCommon;
-import chatapp.common.Server;
 import chatapp.model.User;
+import chatapp.common.Client;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import static java.util.stream.Collectors.toList;
@@ -27,13 +30,6 @@ public class LoginController {
             .filter(user -> (user.username.equals(username) && user.password.equals(password)))
             .collect(toList());
         if (result.size() == 1) {
-            //start server
-            System.out.println(Server.running);
-            Ser
-            if (!Server.running) {
-                Server server = new Server(12345);
-                server.start();
-            }
             return result.get(0);
         }
         return null;

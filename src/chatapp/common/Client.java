@@ -5,6 +5,7 @@
  */
 package chatapp.common;
 
+import chatapp.model.User;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -21,19 +22,23 @@ import java.util.logging.Logger;
 public class Client {
     private InetAddress host;
     private int port;
+    public User user;
     
-    public Client(InetAddress host, int port) {
+    public Client(InetAddress host, int port, User user) {
         this.host = host;
         this.port = port;
+        this.user = user;
     }
     
     public void start() throws IOException {
         Socket client = new Socket(host, port);
         Read read = new Read(client);
-        Write write = new Write(client);
+        Write write = new Write(client, user);
         read.start();
         write.start();
     }
+    
+    
 }
 
 class Read extends Thread {
@@ -65,9 +70,11 @@ class Read extends Thread {
 
 class Write extends Thread {
     private Socket client;
+    public User user;
     
-    public Write(Socket client) {
+    public Write(Socket client, User user) {
         this.client = client;
+        this.user = user;
     }
     
     @Override

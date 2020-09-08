@@ -5,6 +5,7 @@
  */
 package chatapp.view;
 
+import chatapp.common.Server;
 import chatapp.controllers.LoginController;
 import chatapp.model.User;
 import java.io.IOException;
@@ -118,19 +119,21 @@ public class LoginView extends javax.swing.JFrame {
             if (username.equals("") || password.equals("")) {
                 JOptionPane.showMessageDialog(null, "Please enter username or password",
                         "Login fail", JOptionPane.WARNING_MESSAGE);
+                return;
             }
-
+            
             LoginController loginController = new LoginController();
             User user = loginController.login(username, password);
-            
-            if (user.equals(null)) {
-                JOptionPane.showMessageDialog(null, "Please username or password is valid",
-                        "Login fail", JOptionPane.WARNING_MESSAGE);
+            if (user == null) {
+                JOptionPane.showMessageDialog(null, "Username or password is valid",
+                    "Login fail", JOptionPane.WARNING_MESSAGE);
+                return;
             }
+            this.dispose();
+            ChatView chat = new ChatView(user);
+            chat.setVisible(true);
             
-        } catch (IOException ex) {
-            Logger.getLogger(LoginView.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ClassNotFoundException ex) {
+        } catch (IOException | ClassNotFoundException ex) {
             Logger.getLogger(LoginView.class.getName()).log(Level.SEVERE, null, ex);
         }
         
