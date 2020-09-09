@@ -5,91 +5,75 @@
  */
 package chatapp.common;
 
-import chatapp.model.User;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
  * @author Dell
  */
 public class Client {
-    private InetAddress host;
-    private int port;
-    public User user;
+    public Socket client;
     
-    public Client(InetAddress host, int port, User user) {
-        this.host = host;
-        this.port = port;
-        this.user = user;
+    public Client(Socket client) {
+        this.client = client;
     }
     
-    public void start() throws IOException {
-        Socket client = new Socket(host, port);
-        Read read = new Read(client);
-        Write write = new Write(client, user);
+    public void read() throws IOException {
+        ReadMessage read = new ReadMessage(client);
         read.start();
-        write.start();
     }
     
-    
+    public void send(String message) throws IOException {
+//        SendMessage send = new SendMessage(client, message);
+//        send.start();
+        DataOutputStream dos = new DataOutputStream(client.getOutputStream());
+        dos.writeUTF(message);
+    }
 }
 
-class Read extends Thread {
+class ReadMessage extends Thread {
     private Socket client;
     
-    public Read(Socket client) {
+    public ReadMessage(Socket client) {
         this.client = client;
     }
     
     @Override
     public void run() {
-        DataInputStream dis = null;
         try {
-            dis = new DataInputStream(client.getInputStream());
-            while(true) {
-                String message = dis.readUTF(); //doc tu server
+            DataInputStream dis = new DataInputStream(client.getInputStream());
+//            while(true) {
+                String message = dis.readUTF();
                 System.out.println(message);
-            }
+//            }
         } catch (Exception e) {
-            try {
-                dis.close();
-                client.close();
-            } catch (IOException ex) {
-                Logger.getLogger(Read.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            //
         }
     }
 }
 
-class Write extends Thread {
+class SendMessage extends Thread {
     private Socket client;
-    public User user;
+    private String message;
     
-    public Write(Socket client, User user) {
+    public SendMessage(Socket client, String message) {
         this.client = client;
-        this.user = user;
+        this.message = message;
     }
     
     @Override
     public void run() {
-        DataOutputStream dos = null;
-        Scanner sc = null;
         try {
-            dos = new DataOutputStream(client.getOutputStream());
-            sc = new Scanner(System.in);
-            while(true) {
-                String message = sc.nextLine();
-                dos.writeUTF(message); //ghi len server
-            }
+            DataOutputStream dos = new DataOutputStream(client.getOutputStream());
+//            while(true) {
+                dos.writeUTF(message);
+//            }
         } catch (IOException ex) {
-            Logger.getLogger(Write.class.getName()).log(Level.SEVERE, null, ex);
+            //
         }
     }
 }

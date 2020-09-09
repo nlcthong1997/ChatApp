@@ -29,7 +29,7 @@
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" attributes="0">
-                      <Component id="text_chat" min="-2" pref="232" max="-2" attributes="0"/>
+                      <Component id="txt_chat" min="-2" pref="232" max="-2" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="btn_send" pref="80" max="32767" attributes="0"/>
                   </Group>
@@ -48,7 +48,7 @@
                       <Component id="jScrollPane2" min="-2" pref="231" max="-2" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="text_chat" max="32767" attributes="0"/>
+                          <Component id="txt_chat" max="32767" attributes="0"/>
                           <Component id="btn_send" pref="41" max="32767" attributes="0"/>
                       </Group>
                   </Group>
@@ -103,12 +103,15 @@
         </Component>
       </SubComponents>
     </Container>
-    <Component class="javax.swing.JTextField" name="text_chat">
+    <Component class="javax.swing.JTextField" name="txt_chat">
     </Component>
     <Component class="javax.swing.JButton" name="btn_send">
       <Properties>
         <Property name="text" type="java.lang.String" value="Send"/>
       </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btn_sendActionPerformed"/>
+      </Events>
     </Component>
   </SubComponents>
 </Form>

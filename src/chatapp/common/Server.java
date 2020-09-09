@@ -5,14 +5,13 @@
  */
 package chatapp.common;
 
-import chatapp.model.InfoChat;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Scanner;
+import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,8 +21,9 @@ import java.util.logging.Logger;
  */
 public class Server {
     private int port;
+    public static ArrayList<ClientHandle> listClient;
     public static ArrayList<Socket> listSocket;
-    public static ArrayList<InfoChat> listInfoChat;
+    public static String listPortId;
     
     public Server(int port) {
         this.port = port;
@@ -32,69 +32,102 @@ public class Server {
     public void start() throws IOException {
         ServerSocket server = new ServerSocket(port);
         System.out.println("Server is running on port: " + port);
-        //WriteServer write = new WriteServer();
-        //write.start();
+        
         while (true) {
-            Socket socket = server.accept(); //đợi kết nối từ client
-            listSocket.add(socket); //thêm vào danh sách các kết nối
-            ReadServer read = new ReadServer(socket);
-            read.start();
+            //send all client
+            SendClients send = new SendClients();
+            send.start();
+            
+            //đợi kết nối từ client
+            Socket socket = server.accept();
+            
+            //server đọc data từ client và xử lý sau đó gửi đi
+            int clientPortId = socket.getPort();
+            ClientHandle handle = new ClientHandle(socket, clientPortId);
+            
+            //thêm vào danh sách show active
+            listPortId += String.valueOf(clientPortId) + "#";
+            listClient.add(handle);
+            listSocket.add(socket);
+            
+            //start thread
+            handle.start();
         }
     }
     
-    //start server
+    //main
     public static void main(String[] agrs) throws IOException {
+        Server.listClient = new ArrayList();
         Server.listSocket = new ArrayList();
-        Server.listInfoChat = new ArrayList();
+        Server.listPortId = ">>";
         Server server = new Server(12345);
         server.start();
     }
 }
 
-class ReadServer extends Thread {
+class ClientHandle extends Thread {
     private Socket server;
+    public int clientPortId;
     
-    public ReadServer(Socket server) {
+    public ClientHandle(Socket server, int clientPortId) {
         this.server = server;
+        this.clientPortId = clientPortId;
     }
     
     @Override
     public void run() {
         DataInputStream dis = null;
+        DataOutputStream dos = null;
         try {
             dis = new DataInputStream(server.getInputStream());
+            dos = new DataOutputStream(server.getOutputStream());
+            String received, mess, userName;
+            int portId;
             while(true) {
-                String message = dis.readUTF(); //đọc tin nhắn từ client
-                for (Socket item: Server.listSocket) {
-                    DataOutputStream dos = new DataOutputStream(server.getOutputStream());
-                    dos.writeUTF(message);//ghi các tin nhắn lên các client trong danh sách.
+                //đọc tin nhắn từ client
+                received  = dis.readUTF();
+                StringTokenizer arrStrMessage = new StringTokenizer(received , "#");
+                mess = arrStrMessage.nextToken(); 
+                userName = arrStrMessage.nextToken();
+                portId = Integer.parseInt(arrStrMessage.nextToken());
+                
+//                System.out.println("Message: " + mess);
+//                System.out.println("PortId: " + portId);
+//                System.out.println("Username: " + userName);
+                System.out.println(userName + ": " + mess);
+                dos.writeUTF(userName + ": " + mess);
+                for (ClientHandle client: Server.listClient) {
+                    
+//                    break;
+                    
+//                    
+//                    System.out.println("Message from client: " + message);
                 }
             }
-        } catch (Exception e) {
-            try {
-                dis.close();
-                server.close();
-            } catch (IOException ex) {
-                Logger.getLogger(Read.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            
+        } catch (IOException e) {
+            //
+        }
+        
+        try {
+            dis.close();
+            dos.close();
+        } catch (IOException ex) {
+            Logger.getLogger(ClientHandle.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 }
 
-class WriteServer extends Thread {
+class SendClients extends Thread {
     @Override
     public void run() {
-        Scanner sc = new Scanner(System.in);
-        while(true) {
-            String message = sc.nextLine();
-            try {
-                for (Socket item: Server.listSocket) {
-                    DataOutputStream dos = new DataOutputStream(item.getOutputStream());
-                    dos.writeUTF(message);
-                }
-            } catch (IOException ex) {
-                Logger.getLogger(WriteServer.class.getName()).log(Level.SEVERE, null, ex);
+        try {
+            for (Socket client: Server.listSocket) {
+                DataOutputStream dos = new DataOutputStream(client.getOutputStream());
+                dos.writeUTF(Server.listPortId);
             }
+        } catch (IOException e) {
+            //
         }
     }
 }

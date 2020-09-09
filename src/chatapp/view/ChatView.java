@@ -5,12 +5,13 @@
  */
 package chatapp.view;
 
-import chatapp.controllers.ChatController;
 import chatapp.model.User;
+import chatapp.common.Client;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.DefaultListModel;
 
 /**
  *
@@ -22,13 +23,21 @@ public class ChatView extends javax.swing.JFrame {
      * Creates new form ChatView
      */
     public static User user;
+    public static int serverPort = 12345;
+    public static Socket socket;
+    public static Client client;
+    public static int clientPortId;
+    
     public ChatView(User user) throws IOException {
         initComponents();
-        this.user = user;
+        Socket socket = new Socket(InetAddress.getLocalHost(), serverPort);
+        Client client = new Client(socket);            
+        int clientPortId = socket.getLocalPort();
         
-        //create socket client and connect server
-        ChatController chatController = new ChatController();
-        chatController.startSocket(user);
+        this.user = user;
+        this.socket = socket;
+        this.client = client;
+        this.clientPortId = clientPortId;
         
 //        DefaultListModel defaultListModel = new DefaultListModel();
 //        list_user.setModel(defaultListModel);
@@ -47,7 +56,7 @@ public class ChatView extends javax.swing.JFrame {
         list_user = new javax.swing.JList<>();
         jScrollPane2 = new javax.swing.JScrollPane();
         view_chat = new javax.swing.JTextArea();
-        text_chat = new javax.swing.JTextField();
+        txt_chat = new javax.swing.JTextField();
         btn_send = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -69,6 +78,11 @@ public class ChatView extends javax.swing.JFrame {
         jScrollPane2.setViewportView(view_chat);
 
         btn_send.setText("Send");
+        btn_send.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_sendActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -80,7 +94,7 @@ public class ChatView extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(text_chat, javax.swing.GroupLayout.PREFERRED_SIZE, 232, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(txt_chat, javax.swing.GroupLayout.PREFERRED_SIZE, 232, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btn_send, javax.swing.GroupLayout.DEFAULT_SIZE, 80, Short.MAX_VALUE))
                     .addComponent(jScrollPane2))
@@ -95,7 +109,7 @@ public class ChatView extends javax.swing.JFrame {
                         .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 231, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(text_chat)
+                            .addComponent(txt_chat)
                             .addComponent(btn_send, javax.swing.GroupLayout.DEFAULT_SIZE, 41, Short.MAX_VALUE)))
                     .addComponent(jScrollPane1))
                 .addContainerGap())
@@ -107,6 +121,19 @@ public class ChatView extends javax.swing.JFrame {
     private void list_userMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_list_userMouseClicked
         // TODO add your handling code here:
     }//GEN-LAST:event_list_userMouseClicked
+
+    private void btn_sendActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_sendActionPerformed
+        try {
+            String textChat = txt_chat.getText();
+            String message = textChat + "#" + user.username + "#" + String.valueOf(clientPortId);
+            client.send(message);
+            client.read();
+            System.out.println("click");
+        } catch (IOException ex) {
+            Logger.getLogger(ChatView.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+    }//GEN-LAST:event_btn_sendActionPerformed
 
     /**
      * @param args the command line arguments
@@ -152,7 +179,7 @@ public class ChatView extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JList<String> list_user;
-    private javax.swing.JTextField text_chat;
+    private javax.swing.JTextField txt_chat;
     private javax.swing.JTextArea view_chat;
     // End of variables declaration//GEN-END:variables
 }
