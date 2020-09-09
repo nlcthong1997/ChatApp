@@ -5,33 +5,80 @@
  */
 package chatapp.view;
 
-import chatapp.controllers.ChatController;
-import chatapp.model.User;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.DefaultListModel;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import chatapp.enumApp.ActionEnum;
+import chatapp.model.ChatContent;
+import chatapp.model.User;
 
 /**
  *
  * @author Dell
  */
-public class ChatView extends javax.swing.JFrame {
+public class ChatView extends javax.swing.JFrame implements Runnable{
 
     /**
      * Creates new form ChatView
      */
-    public static User user;
-    public ChatView(User user) throws IOException {
+    public static User userCurrent;
+    private static Socket socketCurrent;
+    ObjectInputStream objectInputStream=null;
+    ObjectOutputStream objectOutputStream=null;
+    List<User> lsUser=new ArrayList<User>();
+    Map<User,String> userMapChat= new HashMap<User, String>();
+    
+    
+    public ChatView(Socket socker, User user) throws IOException {
         initComponents();
-        this.user = user;
-        
-        //create socket client and connect server
-        ChatController chatController = new ChatController();
-        chatController.startSocket(user);
-        
-//        DefaultListModel defaultListModel = new DefaultListModel();
-//        list_user.setModel(defaultListModel);
+        this.userCurrent = user;
+        this.socketCurrent=socker;
+    }
+    
+    @SuppressWarnings("unchecked")
+	@Override
+    public void run() {
+	while (true) {
+	    try {
+		if (socketCurrent != null) {
+			// get the input stream from the connected socket
+	        InputStream inputStream = socketCurrent.getInputStream();
+	        // create a DataInputStream so we can read data from it.
+	        objectInputStream = new ObjectInputStream(inputStream);
+		    Object msg = "";
+		    while ((msg = objectInputStream.readObject()) != null) {
+		    	 String action=String.valueOf(msg);
+		    	 if(ActionEnum.UPDATELISTUSER.getAction().equals(action)) {
+		    		 List<User> lsUserTemp = (List<User>) objectInputStream.readObject();
+		    		 for(User user:lsUserTemp) {
+		    			 if(!lsUser.contains(user)) {
+		    				 lsUser.add(user);
+		    			 }else if (!lsUser.contains(user)) {
+		    				 lsUser.remove(user);
+		    			 }
+		    		 }
+		    	 }else if(ActionEnum.UPDATECHAT.getAction().equals(action)) {
+		    		 ChatContent chat=(ChatContent) objectInputStream.readObject();
+		    		 for(User user:lsUser) {
+		    			 if(chat.getSender().getUsername().equals(user.getUsername())) {
+		    				 user.setChatOfUser(chat.getContentChat());
+		    			 }
+		    		 }
+		    	 }
+		    }
+		}
+	    } catch (Exception e) {
+		// Do not change this because it spawn try-catch many time while running thread!
+	    }
+	}
     }
 
     /**
@@ -57,6 +104,7 @@ public class ChatView extends javax.swing.JFrame {
             public int getSize() { return strings.length; }
             public String getElementAt(int i) { return strings[i]; }
         });
+        list_user.setSelectedIndex(0);
         list_user.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 list_userMouseClicked(evt);
@@ -69,6 +117,30 @@ public class ChatView extends javax.swing.JFrame {
         jScrollPane2.setViewportView(view_chat);
 
         btn_send.setText("Send");
+        
+        btn_send.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+               String text=text_chat.getText();
+               User userReceiver = lsUser.get(list_user.getSelectedIndex());
+               
+               ChatContent chat= new ChatContent();
+               chat.setContentChat(text);
+               chat.setSender(userCurrent);
+               chat.setSender(userReceiver);
+               
+               try {
+                   // get the output stream from the socket.
+                   OutputStream outputStream = socketCurrent.getOutputStream();
+                   // create an object output stream from the output stream so we can send an object through it
+                   objectOutputStream = new ObjectOutputStream(outputStream);
+				objectOutputStream.writeObject(chat);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+               
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -105,7 +177,9 @@ public class ChatView extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void list_userMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_list_userMouseClicked
-        // TODO add your handling code here:
+        
+    	view_chat.setText(list_user.getSelectedValue());
+    	
     }//GEN-LAST:event_list_userMouseClicked
 
     /**
@@ -136,15 +210,17 @@ public class ChatView extends javax.swing.JFrame {
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                try {
-                    new ChatView(user).setVisible(true);
-                } catch (IOException ex) {
-                    Logger.getLogger(ChatView.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-        });
+
+		java.awt.EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					new ChatView(socketCurrent,userCurrent).setVisible(true);
+				} catch (IOException ex) {
+//					Logger.getLogger(ChatView.class.getName()).log(Level.SEVERE, null, ex);
+				}
+			}
+		});
+		 
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

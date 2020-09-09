@@ -9,6 +9,7 @@ import chatapp.common.Server;
 import chatapp.controllers.LoginController;
 import chatapp.model.User;
 import java.io.IOException;
+import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
@@ -114,8 +115,8 @@ public class LoginView extends javax.swing.JFrame {
 
     private void btn_dang_nhapActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_dang_nhapActionPerformed
        try {
-            String username = txt_tai_khoan.getText();
-            String password = txt_mat_khau.getText();
+            String username =  "username1";
+            String password =  "password1"; 
             if (username.equals("") || password.equals("")) {
                 JOptionPane.showMessageDialog(null, "Please enter username or password",
                         "Login fail", JOptionPane.WARNING_MESSAGE);
@@ -130,8 +131,13 @@ public class LoginView extends javax.swing.JFrame {
                 return;
             }
             this.dispose();
-            ChatView chat = new ChatView(user);
+           
+            
+            //---------------
+            Socket socket = new Socket("localhost",7777);
+            ChatView chat = new ChatView(socket,user);
             chat.setVisible(true);
+            
             
         } catch (IOException | ClassNotFoundException ex) {
             Logger.getLogger(LoginView.class.getName()).log(Level.SEVERE, null, ex);

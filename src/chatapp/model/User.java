@@ -14,8 +14,17 @@ import java.io.Serializable;
 public class User implements Serializable {
     public String username;
     public String password;
+    private String chatOfUser;
 
-    public User(String username, String password) {
+    public String getChatOfUser() {
+		return chatOfUser;
+	}
+
+	public void setChatOfUser(String chatOfUser) {
+		this.chatOfUser = chatOfUser;
+	}
+
+	public User(String username, String password) {
         this.username = username;
         this.password = password;
     }
@@ -35,4 +44,25 @@ public class User implements Serializable {
     public void setPassword(String password) {
         this.password = password;
     }
+    
+    
+    @Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+
+		User other = (User) obj;
+		if (username != other.getUsername())
+			return false;
+		if (username == null) {
+			if (other.username != null)
+				return false;
+		} else if (!username.equals(other.username))
+			return false;
+		return true;
+	}
 }

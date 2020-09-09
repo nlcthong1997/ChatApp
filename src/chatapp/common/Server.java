@@ -46,7 +46,7 @@ public class Server {
     public static void main(String[] agrs) throws IOException {
         Server.listSocket = new ArrayList();
         Server.listInfoChat = new ArrayList();
-        Server server = new Server(12345);
+        Server server = new Server(7777);
         server.start();
     }
 }

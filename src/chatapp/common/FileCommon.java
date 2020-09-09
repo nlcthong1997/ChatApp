@@ -32,4 +32,23 @@ public class FileCommon {
         users = (List<User>) ois.readObject();
         return users;
     }
+    
+    public static void main(String[] args) {
+    	List<User> lsUser= new ArrayList<User>();
+		for(int i=0;i<10;i++) {
+			String username="username"+String.valueOf(i);
+			String password="password"+String.valueOf(i);
+			User a= new User(username, password);
+			lsUser.add(a);
+		}
+		try {
+			FileCommon.writeUsersFile("data.txt",lsUser);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 }
