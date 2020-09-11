@@ -22,14 +22,13 @@ public class Client {
         this.client = client;
     }
     
-    public void read() throws IOException {
+    public String read() throws IOException {
         ReadMessage read = new ReadMessage(client);
         read.start();
+        return read.getMessage();
     }
     
     public void send(String message) throws IOException {
-//        SendMessage send = new SendMessage(client, message);
-//        send.start();
         DataOutputStream dos = new DataOutputStream(client.getOutputStream());
         dos.writeUTF(message);
     }
@@ -37,6 +36,7 @@ public class Client {
 
 class ReadMessage extends Thread {
     private Socket client;
+    public static String message;
     
     public ReadMessage(Socket client) {
         this.client = client;
@@ -46,13 +46,16 @@ class ReadMessage extends Thread {
     public void run() {
         try {
             DataInputStream dis = new DataInputStream(client.getInputStream());
-//            while(true) {
-                String message = dis.readUTF();
-                System.out.println(message);
-//            }
+                String mess = dis.readUTF();
+                System.out.println("client nhan: " + mess);
+                this.message = mess;
         } catch (Exception e) {
             //
         }
+    }
+    
+    public String getMessage() {
+        return this.message;
     }
 }
 
@@ -69,9 +72,7 @@ class SendMessage extends Thread {
     public void run() {
         try {
             DataOutputStream dos = new DataOutputStream(client.getOutputStream());
-//            while(true) {
-                dos.writeUTF(message);
-//            }
+            dos.writeUTF(message);
         } catch (IOException ex) {
             //
         }

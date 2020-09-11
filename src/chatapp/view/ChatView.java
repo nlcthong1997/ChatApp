@@ -10,8 +10,10 @@ import chatapp.common.Client;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.DefaultListModel;
 
 /**
  *
@@ -23,24 +25,28 @@ public class ChatView extends javax.swing.JFrame {
      * Creates new form ChatView
      */
     public static User user;
-    public static int serverPort = 12345;
-    public static Socket socket;
-    public static Client client;
-    public static int clientPortId;
+    public int serverPort = 12345;
+    public Socket socket;
+    public Client client;
+    public int clientPortId;
     
     public ChatView(User user) throws IOException {
         initComponents();
-        Socket socket = new Socket(InetAddress.getLocalHost(), serverPort);
-        Client client = new Client(socket);            
-        int clientPortId = socket.getLocalPort();
+        // create socket client
+        Socket _socket = new Socket(InetAddress.getLocalHost(), serverPort);
+        Client _client = new Client(_socket);
         
         this.user = user;
-        this.socket = socket;
-        this.client = client;
-        this.clientPortId = clientPortId;
+        this.socket = _socket;
+        this.client = _client;
+        this.clientPortId = _socket.getLocalPort();
         
-//        DefaultListModel defaultListModel = new DefaultListModel();
-//        list_user.setModel(defaultListModel);
+        //first load list user active
+        String mess = _client.read();
+//        StringTokenizer listPortId = new StringTokenizer(mess , "#");
+        DefaultListModel defaultListModel = new DefaultListModel();
+        
+        list_user.setModel(defaultListModel);
     }
 
     /**
@@ -125,12 +131,13 @@ public class ChatView extends javax.swing.JFrame {
     private void btn_sendActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_sendActionPerformed
         try {
             String textChat = txt_chat.getText();
-            String message = textChat + "#" + user.username + "#" + String.valueOf(clientPortId);
+//            String message = textChat + "#" + user.username + "#" + String.valueOf(clientPortId);
+            String message = "wqwq#" + user.username + "#" + textChat;
             client.send(message);
-            client.read();
-            System.out.println("click");
+            String mes = client.read();
+            System.out.println("message ne: " + mes);
         } catch (IOException ex) {
-            Logger.getLogger(ChatView.class.getName()).log(Level.SEVERE, null, ex);
+            //Logger.getLogger(ChatView.class.getName()).log(Level.SEVERE, null, ex);
         }
         
     }//GEN-LAST:event_btn_sendActionPerformed
@@ -168,7 +175,7 @@ public class ChatView extends javax.swing.JFrame {
                 try {
                     new ChatView(user).setVisible(true);
                 } catch (IOException ex) {
-                    Logger.getLogger(ChatView.class.getName()).log(Level.SEVERE, null, ex);
+                    //Logger.getLogger(ChatView.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         });

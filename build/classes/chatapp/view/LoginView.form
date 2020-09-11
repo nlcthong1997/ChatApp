@@ -82,7 +82,7 @@
     </Component>
     <Component class="javax.swing.JTextField" name="txt_tai_khoan">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Nh&#x1ead;p t&#xe0;i kho&#x1ea3;n"/>
+        <Property name="text" type="java.lang.String" value="chithong0"/>
         <Property name="name" type="java.lang.String" value="" noResource="true"/>
       </Properties>
     </Component>
@@ -94,7 +94,7 @@
     </Component>
     <Component class="javax.swing.JTextField" name="txt_mat_khau">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Nh&#x1ead;p m&#x1ead;t kh&#x1ea9;u"/>
+        <Property name="text" type="java.lang.String" value="123456"/>
         <Property name="name" type="java.lang.String" value="" noResource="true"/>
       </Properties>
     </Component>

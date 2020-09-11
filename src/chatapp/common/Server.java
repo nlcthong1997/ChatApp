@@ -42,12 +42,12 @@ public class Server {
             Socket socket = server.accept();
             
             //server đọc data từ client và xử lý sau đó gửi đi
-            int clientPortId = socket.getPort();
-            ClientHandle handle = new ClientHandle(socket, clientPortId);
+            ClientHandle handle = new ClientHandle(socket);
             
             //thêm vào danh sách show active
+            int clientPortId = socket.getPort();
             listPortId += String.valueOf(clientPortId) + "#";
-            listClient.add(handle);
+//            listClient.add(handle);
             listSocket.add(socket);
             
             //start thread
@@ -59,19 +59,17 @@ public class Server {
     public static void main(String[] agrs) throws IOException {
         Server.listClient = new ArrayList();
         Server.listSocket = new ArrayList();
-        Server.listPortId = ">>";
+        Server.listPortId = "listActive#";
         Server server = new Server(12345);
         server.start();
     }
 }
 
 class ClientHandle extends Thread {
-    private Socket server;
-    public int clientPortId;
+    public Socket server;
     
-    public ClientHandle(Socket server, int clientPortId) {
+    public ClientHandle(Socket server) {
         this.server = server;
-        this.clientPortId = clientPortId;
     }
     
     @Override
@@ -80,7 +78,6 @@ class ClientHandle extends Thread {
         DataOutputStream dos = null;
         try {
             dis = new DataInputStream(server.getInputStream());
-            dos = new DataOutputStream(server.getOutputStream());
             String received, mess, userName;
             int portId;
             while(true) {
@@ -91,29 +88,18 @@ class ClientHandle extends Thread {
                 userName = arrStrMessage.nextToken();
                 portId = Integer.parseInt(arrStrMessage.nextToken());
                 
-//                System.out.println("Message: " + mess);
-//                System.out.println("PortId: " + portId);
-//                System.out.println("Username: " + userName);
-                System.out.println(userName + ": " + mess);
-                dos.writeUTF(userName + ": " + mess);
-                for (ClientHandle client: Server.listClient) {
-                    
-//                    break;
-                    
-//                    
-//                    System.out.println("Message from client: " + message);
+                for (Socket client: Server.listSocket) {
+                    int portReciver = client.getPort();
+                    if (portReciver == portId) {
+                        dos = new DataOutputStream(server.getOutputStream());
+                        dos.writeUTF(server.getPort() +">>>"+ userName + ": " + mess + ">>>" + client.getPort());
+                        break;
+                    }
                 }
             }
             
         } catch (IOException e) {
             //
-        }
-        
-        try {
-            dis.close();
-            dos.close();
-        } catch (IOException ex) {
-            Logger.getLogger(ClientHandle.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 }
