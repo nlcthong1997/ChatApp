@@ -8,7 +8,6 @@ package chatapp.common;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.Socket;
 
 /**
@@ -35,7 +34,7 @@ public class Client {
 }
 
 class ReadMessage extends Thread {
-    private Socket client;
+    public static Socket client;
     public static String message;
     
     public ReadMessage(Socket client) {
@@ -46,9 +45,7 @@ class ReadMessage extends Thread {
     public void run() {
         try {
             DataInputStream dis = new DataInputStream(client.getInputStream());
-                String mess = dis.readUTF();
-                System.out.println("client nhan: " + mess);
-                this.message = mess;
+                this.message = dis.readUTF();
         } catch (Exception e) {
             //
         }

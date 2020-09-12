@@ -34,10 +34,6 @@ public class Server {
         System.out.println("Server is running on port: " + port);
         
         while (true) {
-            //send all client
-            SendClients send = new SendClients();
-            send.start();
-            
             //đợi kết nối từ client
             Socket socket = server.accept();
             
@@ -47,7 +43,6 @@ public class Server {
             //thêm vào danh sách show active
             int clientPortId = socket.getPort();
             listPortId += String.valueOf(clientPortId) + "#";
-//            listClient.add(handle);
             listSocket.add(socket);
             
             //start thread
@@ -85,15 +80,21 @@ class ClientHandle extends Thread {
                 received  = dis.readUTF();
                 StringTokenizer arrStrMessage = new StringTokenizer(received , "#");
                 mess = arrStrMessage.nextToken(); 
-                userName = arrStrMessage.nextToken();
-                portId = Integer.parseInt(arrStrMessage.nextToken());
                 
-                for (Socket client: Server.listSocket) {
-                    int portReciver = client.getPort();
-                    if (portReciver == portId) {
-                        dos = new DataOutputStream(server.getOutputStream());
-                        dos.writeUTF(server.getPort() +">>>"+ userName + ": " + mess + ">>>" + client.getPort());
-                        break;
+                if (mess.equals("loadActive")) {
+                    SendClients send = new SendClients();
+                    send.send();
+                } else {
+                    userName = arrStrMessage.nextToken();
+                    portId = Integer.parseInt(arrStrMessage.nextToken());
+                    for (Socket client: Server.listSocket) {
+                        int portReciver = client.getPort();
+                        System.out.println("Server read > client: " + portId + "> to: " + portReciver);
+                        if (portReciver == portId) {
+                            dos = new DataOutputStream(client.getOutputStream());
+                            dos.writeUTF(userName + ": " + mess);
+                            break;
+                        }
                     }
                 }
             }
@@ -104,9 +105,8 @@ class ClientHandle extends Thread {
     }
 }
 
-class SendClients extends Thread {
-    @Override
-    public void run() {
+class SendClients {
+    public void send() {
         try {
             for (Socket client: Server.listSocket) {
                 DataOutputStream dos = new DataOutputStream(client.getOutputStream());
