@@ -12,6 +12,8 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
 
 /**
@@ -28,6 +30,7 @@ public class ChatView extends javax.swing.JFrame {
     public Socket socket;
     public static Client client;
     public int clientPortId;
+    public static boolean running = false;
     
     public ChatView(User user) throws IOException {
         initComponents();
@@ -37,11 +40,13 @@ public class ChatView extends javax.swing.JFrame {
         
         //first call
         _client.read();
+        System.out.println("construct");
         
         this.user = user;
         this.socket = _socket;
         this.client = _client;
         this.clientPortId = _socket.getLocalPort();
+        this.running = true;
     }
 
     /**
@@ -60,6 +65,7 @@ public class ChatView extends javax.swing.JFrame {
         txt_chat = new javax.swing.JTextField();
         btn_send = new javax.swing.JButton();
         btn_load_active = new javax.swing.JButton();
+        btn_load_chat = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -88,6 +94,13 @@ public class ChatView extends javax.swing.JFrame {
             }
         });
 
+        btn_load_chat.setText("Load chat");
+        btn_load_chat.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_load_chatActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -103,24 +116,28 @@ public class ChatView extends javax.swing.JFrame {
                         .addComponent(txt_chat, javax.swing.GroupLayout.PREFERRED_SIZE, 232, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btn_send, javax.swing.GroupLayout.DEFAULT_SIZE, 80, Short.MAX_VALUE))
-                    .addComponent(jScrollPane2))
+                    .addComponent(jScrollPane2)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(btn_load_chat)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(btn_load_active)
+                    .addComponent(btn_load_chat))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(btn_load_active)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 251, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 231, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 202, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(txt_chat)
-                            .addComponent(btn_send, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                            .addComponent(btn_send, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 251, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
         );
 
@@ -144,13 +161,8 @@ public class ChatView extends javax.swing.JFrame {
                 //
                 String message = textChat + "#" + user.username + "#" + portReciver;
                 client.send(message);
-                Thread.sleep(300);
-                String mes = client.read();
-                System.out.println("nhan> " + mes);
             }
         } catch (IOException e) {
-            //
-        } catch (InterruptedException ex) {
             //
         }
         
@@ -158,7 +170,7 @@ public class ChatView extends javax.swing.JFrame {
 
     private void btn_load_activeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_load_activeActionPerformed
         try {
-            client.send("loadActive#");
+            client.send("load@Active#");
             Thread.sleep(300);
             String listPostId = client.read();
             if (listPostId != null) {
@@ -169,7 +181,7 @@ public class ChatView extends javax.swing.JFrame {
                 }
                 DefaultListModel defaultListModel = new DefaultListModel();
                 defaultListModel.removeAllElements();
-                if (list.get(0).equals("listActive")) {
+                if (list.get(0).equals("list@Active")) {
                     int i = 1;
                     while(i < list.size()) {
                         defaultListModel.addElement("User#" + list.get(i));
@@ -186,10 +198,20 @@ public class ChatView extends javax.swing.JFrame {
         
     }//GEN-LAST:event_btn_load_activeActionPerformed
 
+    private void btn_load_chatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_load_chatActionPerformed
+        try {
+            this.loadChat();
+        } catch (IOException ex) {
+            Logger.getLogger(ChatView.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(ChatView.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_btn_load_chatActionPerformed
+
     /**
      * @param args the command line arguments
      */
-    public static void main(String args[]) {
+    public static void main(String args[]) throws IOException, InterruptedException {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
@@ -223,15 +245,34 @@ public class ChatView extends javax.swing.JFrame {
                 }
             }
         });
+        
+        loadChat();
+    }
+    
+    private static void loadChat() throws IOException, InterruptedException {
+        while(true) {
+            String listen = client.read();
+            if (listen != null) {
+                StringTokenizer strToken = new StringTokenizer(listen , "#");
+                String mess = strToken.nextToken();
+                if (!mess.equals("list@Active") && mess != null) {
+                    System.out.println("append: "+listen);
+                    view_chat.append(listen+"\n");
+                    break;
+                }
+            }
+            System.out.println("append:");
+        }
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btn_load_active;
+    private javax.swing.JButton btn_load_chat;
     private javax.swing.JButton btn_send;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JList<String> list_user;
     private javax.swing.JTextField txt_chat;
-    private javax.swing.JTextArea view_chat;
+    private static javax.swing.JTextArea view_chat;
     // End of variables declaration//GEN-END:variables
 }

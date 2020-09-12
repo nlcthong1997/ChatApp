@@ -54,7 +54,7 @@ public class Server {
     public static void main(String[] agrs) throws IOException {
         Server.listClient = new ArrayList();
         Server.listSocket = new ArrayList();
-        Server.listPortId = "listActive#";
+        Server.listPortId = "list@Active#";
         Server server = new Server(12345);
         server.start();
     }
@@ -81,7 +81,7 @@ class ClientHandle extends Thread {
                 StringTokenizer arrStrMessage = new StringTokenizer(received , "#");
                 mess = arrStrMessage.nextToken(); 
                 
-                if (mess.equals("loadActive")) {
+                if (mess.equals("load@Active")) {
                     SendClients send = new SendClients();
                     send.send();
                 } else {
@@ -91,6 +91,7 @@ class ClientHandle extends Thread {
                         int portReciver = client.getPort();
                         System.out.println("Server read > client: " + portId + "> to: " + portReciver);
                         if (portReciver == portId) {
+                            System.out.println("Server send > " + userName + ": " + mess);
                             dos = new DataOutputStream(client.getOutputStream());
                             dos.writeUTF(userName + ": " + mess);
                             break;
@@ -110,6 +111,7 @@ class SendClients {
         try {
             for (Socket client: Server.listSocket) {
                 DataOutputStream dos = new DataOutputStream(client.getOutputStream());
+                System.out.println("Server gui list id");
                 dos.writeUTF(Server.listPortId);
             }
         } catch (IOException e) {
