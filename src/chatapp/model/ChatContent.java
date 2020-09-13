@@ -1,6 +1,12 @@
 package chatapp.model;
 
-public class ChatContent {
+import java.io.Serializable;
+
+public class ChatContent implements Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private String contentChat;
 	private User sender;
 	private User receiver;
@@ -31,6 +37,5 @@ public class ChatContent {
 	public ChatContent() {
 		super();
 	}
-	
-	
+	 
 }

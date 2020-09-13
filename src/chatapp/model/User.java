@@ -12,16 +12,20 @@ import java.io.Serializable;
  * @author Dell
  */
 public class User implements Serializable {
-    public String username;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	public String username;
     public String password;
-    private String chatOfUser;
+    private StringBuilder chatOfUser = new StringBuilder();
 
     public String getChatOfUser() {
-		return chatOfUser;
+		return chatOfUser.toString();
 	}
 
 	public void setChatOfUser(String chatOfUser) {
-		this.chatOfUser = chatOfUser;
+		this.chatOfUser.append(chatOfUser);
 	}
 
 	public User(String username, String password) {
@@ -56,13 +60,24 @@ public class User implements Serializable {
 			return false;
 
 		User other = (User) obj;
-		if (username != other.getUsername())
+		if(username==null || other.getUsername() ==null) {
 			return false;
-		if (username == null) {
-			if (other.username != null)
-				return false;
-		} else if (!username.equals(other.username))
+		}
+		if (!username.equals(other.getUsername()))
 			return false;
 		return true;
 	}
+
+	public User(String username, String password, StringBuilder chatOfUser) {
+		super();
+		this.username = username;
+		this.password = password;
+		this.chatOfUser = chatOfUser;
+	}
+
+	public User() {
+		super();
+	}
+    
+    
 }

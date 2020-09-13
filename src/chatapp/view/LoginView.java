@@ -51,13 +51,13 @@ public class LoginView extends javax.swing.JFrame {
         lb_tai_khoan.setText("TÀI KHOẢN");
         lb_tai_khoan.setName(""); // NOI18N
 
-        txt_tai_khoan.setText("Nhập tài khoản");
+        txt_tai_khoan.setText("username1");
         txt_tai_khoan.setName(""); // NOI18N
 
         lb_mat_khau.setText("MẬT KHẨU");
         lb_mat_khau.setName(""); // NOI18N
 
-        txt_mat_khau.setText("Nhập mật khẩu");
+        txt_mat_khau.setText("password1");
         txt_mat_khau.setName(""); // NOI18N
 
         btn_dang_nhap.setText("ĐĂNG NHẬP");
@@ -117,6 +117,11 @@ public class LoginView extends javax.swing.JFrame {
        try {
             String username =  "username1";
             String password =  "password1"; 
+            if(null != txt_tai_khoan.getText() && !"".equals(txt_tai_khoan.getText())) {
+            	username=txt_tai_khoan.getText();
+            	password=txt_mat_khau.getText();
+            }
+            
             if (username.equals("") || password.equals("")) {
                 JOptionPane.showMessageDialog(null, "Please enter username or password",
                         "Login fail", JOptionPane.WARNING_MESSAGE);
@@ -134,10 +139,12 @@ public class LoginView extends javax.swing.JFrame {
            
             
             //---------------
-            Socket socket = new Socket("localhost",7777);
+            Socket socket = new Socket("localhost",1234);
             ChatView chat = new ChatView(socket,user);
+			Thread threadChat= new Thread(chat); 
+			threadChat.start();
+ 
             chat.setVisible(true);
-            
             
         } catch (IOException | ClassNotFoundException ex) {
             Logger.getLogger(LoginView.class.getName()).log(Level.SEVERE, null, ex);

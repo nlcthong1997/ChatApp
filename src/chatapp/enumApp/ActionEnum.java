@@ -3,7 +3,8 @@ package chatapp.enumApp;
 public enum ActionEnum {
 	
 	UPDATELISTUSER("list"),
-	UPDATECHAT("chat");
+	UPDATECHAT("chat"),
+	EXITCHAT("exit");
 	
 	private String action;
 
