@@ -37,11 +37,12 @@ public class Server {
             //đợi kết nối từ client
             Socket socket = server.accept();
             
+            int clientPortId = socket.getPort();
+            
             //server đọc data từ client và xử lý sau đó gửi đi
-            ClientHandle handle = new ClientHandle(socket);
+            ClientHandle handle = new ClientHandle(socket, clientPortId);
             
             //thêm vào danh sách show active
-            int clientPortId = socket.getPort();
             listPortId += String.valueOf(clientPortId) + "#";
             listSocket.add(socket);
             
@@ -62,9 +63,11 @@ public class Server {
 
 class ClientHandle extends Thread {
     public Socket server;
+    public int clientPortId;
     
-    public ClientHandle(Socket server) {
+    public ClientHandle(Socket server, int clientPortId) {
         this.server = server;
+        this.clientPortId = clientPortId;
     }
     
     @Override
@@ -90,11 +93,11 @@ class ClientHandle extends Thread {
                     for (Socket client: Server.listSocket) {
                         int portReciver = client.getPort();
                         System.out.println("Server read > client: " + portId + "> to: " + portReciver);
-                        if (portReciver == portId) {
+                        System.out.println("Server read1 > client: " + clientPortId + "> to: " + portReciver);
+                        if (portReciver == portId || portReciver == clientPortId) {
                             System.out.println("Server send > " + userName + ": " + mess);
                             dos = new DataOutputStream(client.getOutputStream());
-                            dos.writeUTF(userName + ": " + mess);
-                            break;
+                            dos.writeUTF(portReciver + "#" + clientPortId + "#" + userName + ": " + mess);
                         }
                     }
                 }

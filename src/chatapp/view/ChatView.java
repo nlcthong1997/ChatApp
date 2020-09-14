@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,23 +31,24 @@ public class ChatView extends javax.swing.JFrame {
     public Socket socket;
     public static Client client;
     public int clientPortId;
-    public static boolean running = false;
+    public static HashMap listTextChat;
+    public static String prevPortSelected = "";
     
     public ChatView(User user) throws IOException {
         initComponents();
         // create socket client
         Socket _socket = new Socket(InetAddress.getLocalHost(), serverPort);
         Client _client = new Client(_socket);
+        HashMap<String, String> _listTextChat = new HashMap<String, String>();
         
         //first call
         _client.read();
-        System.out.println("construct");
         
         this.user = user;
         this.socket = _socket;
         this.client = _client;
         this.clientPortId = _socket.getLocalPort();
-        this.running = true;
+        this.listTextChat = _listTextChat;
     }
 
     /**
@@ -145,7 +147,21 @@ public class ChatView extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void list_userMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_list_userMouseClicked
-        // TODO add your handling code here:
+        String selected = selected = list_user.getSelectedValue();
+        if (selected != null) {
+            StringTokenizer strToken = new StringTokenizer(selected , "#");
+            strToken.nextToken();
+            String portUser = strToken.nextToken();
+//            if (!prevPortSelected.equals("")) {
+//                String fullText = view_chat.getText();
+//                listTextChat.remove(prevPortSelected);
+//                listTextChat.put(prevPortSelected, fullText);
+//            }
+            if (!portUser.equals("")) {
+                String val = (String) listTextChat.get(portUser);
+                view_chat.setText(val);
+            }
+        }
     }//GEN-LAST:event_list_userMouseClicked
 
     private void btn_sendActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_sendActionPerformed
@@ -249,19 +265,31 @@ public class ChatView extends javax.swing.JFrame {
         loadChat();
     }
     
-    private static void loadChat() throws IOException, InterruptedException {
+    public static void loadChat() throws IOException, InterruptedException {
         while(true) {
             String listen = client.read();
             if (listen != null) {
                 StringTokenizer strToken = new StringTokenizer(listen , "#");
-                String mess = strToken.nextToken();
-                if (!mess.equals("list@Active") && mess != null) {
-                    System.out.println("append: "+listen);
-                    view_chat.append(listen+"\n");
+                String key = strToken.nextToken();
+                if (!key.equals("list@Active") && key != null) {
+                    String key1 = strToken.nextToken();
+                    String mess = strToken.nextToken();
+                    System.out.println("append: " + mess);
+                    
+                    if (Integer.parseInt(key) != clientPortId) {
+                    
+                    }
+                    if (key1 != localPort) {
+                    
+                    }
+                    String oldChat = (String) listTextChat.get(key);
+                    listTextChat.remove(key);
+                    listTextChat.put(key, oldChat + mess + "\n");
                     break;
                 }
             }
             System.out.println("append:");
+            Thread.sleep(300);
         }
     }
 
