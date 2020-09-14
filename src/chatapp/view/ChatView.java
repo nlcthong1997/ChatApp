@@ -35,8 +35,8 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
     public int serverPort = 12345;
     public static Socket socket;
     public static HashMap<Integer, String> listActive;
-    public static HashMap<Integer, String> listChat;
-    public static int selectedUser;
+    public static HashMap<String, String> listChat;
+    public static int selectedUser = 0;
     public ObjectInputStream objInputStream;
     public ObjectOutputStream objOutputStream;
     
@@ -65,40 +65,80 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
             objOutputStream.flush();
             
             DefaultListModel defaultListModel = new DefaultListModel();
-            listChat = new HashMap<Integer, String>();
+            ChatView.listChat = new HashMap<String, String>();
             
             ChatView.loadActive(defaultListModel);
             
             while (true) {
-                ChatView.loadActive(defaultListModel);
+                String action = ChatView.loadActive(defaultListModel);
+                if (ActionEnum.FIRSTCALL.getAction().equals(action)) {
+                    continue;
+                }
                 
                 //setup content
-                ObjectInputStream objContent = new ObjectInputStream(ChatView.socket.getInputStream());
-                String actionContent = String.valueOf(objContent);
-                if (ActionEnum.SENDMESSAGE.equals(actionContent)) {
-                    Content content = (Content) objContent.readObject();
-                    boolean differentUserCurrent = content.fromPort != ChatView.socket.getLocalPort();
-
-                    if (!listChat.containsKey(content.fromPort)) {
-                        listChat.put(content.fromPort, content.message + "\n");
-                        continue;
+                ObjectInputStream objInputContent = new ObjectInputStream(ChatView.socket.getInputStream());
+                Object receiverContent = objInputContent.readObject();
+                
+                String actionContent = String.valueOf(receiverContent);
+                if (ActionEnum.SERVERSENDMESSAGE.getAction().equals(actionContent)) {
+                    Content content = (Content) objInputContent.readObject();
+                    
+                    String key = String.valueOf(content.fromPort) + "#" + String.valueOf(content.toPort) + "#";
+                    String reverseKey = String.valueOf(content.toPort) + "#" + String.valueOf(content.fromPort) + "#";
+                    String oldChat, newChat;
+                    if (!ChatView.listChat.containsKey(key) && !ChatView.listChat.containsKey(reverseKey)) {
+                        ChatView.listChat.put(key, content.username + ": " + content.message + "\n");
+                    } else if (ChatView.listChat.containsKey(key)){
+                        oldChat = ChatView.listChat.get(key);
+                        newChat = oldChat + content.username + ": " + content.message + "\n";
+                        ChatView.listChat.replace(key, oldChat, newChat);
+                    } else {
+                        oldChat = ChatView.listChat.get(reverseKey);
+                        newChat = oldChat + content.username + ": " + content.message + "\n";
+                        ChatView.listChat.replace(reverseKey, oldChat, newChat);
                     }
-
-                    if (listChat.containsKey(content.fromPort)) {
-                        String oldChat = listChat.get(content.fromPort);
-                        String newChat = oldChat + content.message + "\n";
-                        listChat.replace(content.fromPort, oldChat, newChat);
-                    }
-
-                    String selected = selected = list_user.getSelectedValue();
-                    if (selected != null) {
-                        StringTokenizer strToken = new StringTokenizer(selected , "#");
-                        int portUser = Integer.parseInt(strToken.nextToken());
-                        selectedUser = portUser;
-                        if (listChat.containsKey(portUser)) {
-                            String contentChat = listChat.get(portUser);
-                            view_chat.setText(contentChat);
+                    
+                    // server send it to yourself
+                    if (content.fromPort == ChatView.socket.getLocalPort()) {
+                        int index = 0;
+                        for (Map.Entry userActive: listActive.entrySet()) {
+                            if (userActive.getKey().equals(content.toPort)) {
+                                ChatView.list_user.setSelectedIndex(index);
+                            }
+                            index++;
                         }
+                        System.out.println("current sle: " + list_user.getSelectedValue());
+                        String contentChat;
+                        if (ChatView.listChat.containsKey(key)) {
+                            contentChat = listChat.get(key);
+                        } else {
+                            contentChat = listChat.get(reverseKey);
+                        }
+                        view_chat.setText(contentChat);
+                    } else { // server send for user receiver
+                        int index = 0;
+                        int selected = 0;
+                        // user focus
+                        for (Map.Entry userActive: listActive.entrySet()) {
+                            if (userActive.getKey().equals(ChatView.selectedUser)) {
+                                ChatView.list_user.setSelectedIndex(index);
+                                selected = (int) userActive.getKey();
+                            }
+                            index++;
+                        }
+                        if (selected != 0) {
+                            String keyLoad = selected + "#" + String.valueOf(ChatView.socket.getLocalPort()) + "#";
+                            String reverseKeyLoad = String.valueOf(ChatView.socket.getLocalPort()) + "#" + selected + "#";
+                            String contentChat;
+                            if (ChatView.listChat.containsKey(keyLoad)) {
+                                contentChat = listChat.get(key);
+                            } else {
+                                contentChat = listChat.get(reverseKeyLoad);
+                            }
+                            view_chat.setText(contentChat);
+                            System.out.println("ne sle: " + list_user.getSelectedValue());
+                        }
+                        
                     }
                 }
             }
@@ -204,13 +244,22 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
     }// </editor-fold>//GEN-END:initComponents
 
     private void list_userMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_list_userMouseClicked
-        String selected = selected = list_user.getSelectedValue();
+        String selected = list_user.getSelectedValue();
         if (selected != null) {
             StringTokenizer strToken = new StringTokenizer(selected , "#");
             int portUser = Integer.parseInt(strToken.nextToken());
-            selectedUser = portUser;
-            if (listChat.containsKey(portUser)) {
-                String content = listChat.get(portUser);
+            ChatView.selectedUser = portUser;
+            String key = String.valueOf(portUser) + "#" + String.valueOf(ChatView.socket.getLocalPort()) + "#";
+            String reverseKey = String.valueOf(ChatView.socket.getLocalPort()) + "#" + String.valueOf(portUser) + "#";
+            String keyTemp = "";
+            if (ChatView.listChat.containsKey(key)) {
+                keyTemp = key;
+            }
+            if (ChatView.listChat.containsKey(reverseKey)) {
+                keyTemp = reverseKey;
+            }
+            if (listChat.containsKey(keyTemp)) {
+                String content = listChat.get(keyTemp);
                 view_chat.setText(content);
             }
         }
@@ -219,10 +268,8 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
     private void btn_sendActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_sendActionPerformed
         try {
             String message = txt_chat.getText();
-            String selected = list_user.getSelectedValue();
             
-//            if (!message.equals("") && selected != null) {
-            if (!message.equals("")) {
+            if (!message.equals("") && ChatView.selectedUser != 0) {
                 Content data = new Content();
                 data.action = "";
                 data.fromPort = ChatView.socket.getLocalPort();
@@ -323,54 +370,34 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
 //        loadChat();
     }
     
-    public static void loadActive(DefaultListModel defaultListModel) {
+    public static String loadActive(DefaultListModel defaultListModel) {
         try {
             ObjectInputStream objInputStream = new ObjectInputStream(ChatView.socket.getInputStream());
             Object receiverAction = objInputStream.readObject(); //#message 1
             if (receiverAction != null) {
                 //setup users active
                 String action = String.valueOf(receiverAction);
-                if (action.equals(ActionEnum.UPDATEACTIVES.getAction())) {
+                if (action.equals(ActionEnum.UPDATEACTIVES.getAction()) || action.equals(ActionEnum.FIRSTCALL.getAction())) {
                     ChatView.listActive = (HashMap<Integer, String>) objInputStream.readObject(); //#message 2
+                
+                    defaultListModel.removeAllElements();
+                    for (Map.Entry userActive: listActive.entrySet()) {
+                        defaultListModel.addElement(String.valueOf(userActive.getKey()) + "#" + userActive.getValue());
+                    }
+                    list_user.setModel(defaultListModel);
+                    
+                    if (action.equals(ActionEnum.UPDATEACTIVES.getAction())) {
+                        return ActionEnum.UPDATEACTIVES.getAction();
+                    }
+                    if (action.equals(ActionEnum.FIRSTCALL.getAction())) {
+                        return ActionEnum.FIRSTCALL.getAction();
+                    }
                 }
-                defaultListModel.removeAllElements();
-                for (Map.Entry userActive: listActive.entrySet()) {
-                    defaultListModel.addElement(String.valueOf(userActive.getKey()) + "#" + userActive.getValue());
-                }
-                list_user.setModel(defaultListModel);
             }
         } catch (IOException | ClassNotFoundException e) {
-            //
+            
         }
-        
-    }
-    
-    public static void loadChat() throws IOException, InterruptedException {
-//        while(true) {
-//            String listen = client.read();
-//            if (listen != null) {
-//                StringTokenizer strToken = new StringTokenizer(listen , "#");
-//                String key = strToken.nextToken();
-//                if (!key.equals("list@Active") && key != null) {
-//                    String key1 = strToken.nextToken();
-//                    String mess = strToken.nextToken();
-//                    System.out.println("append: " + mess);
-//                    
-////                    if (Integer.parseInt(key) != clientPortId) {
-////                    
-////                    }
-////                    if (key1 != localPort) {
-////                    
-////                    }
-//                    String oldChat = (String) listTextChat.get(key);
-//                    listTextChat.remove(key);
-//                    listTextChat.put(key, oldChat + mess + "\n");
-//                    break;
-//                }
-//            }
-//            System.out.println("append:");
-//            Thread.sleep(300);
-//        }
+        return "";
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

@@ -12,9 +12,10 @@ package chatapp.actionEnum;
 public enum ActionEnum {
     EXITCHAT("exit"),
     FIRSTCALL("firstcall"),
-    SENDMESSAGE("sendmessage"),
-    CLIENTSENDMESSAGE("clientsendmessage"),
-    UPDATEACTIVES("updateactives");
+    UPDATEACTIVES("updateactives"),
+    SERVERSENDMESSAGE("serversendmessage"),
+    CLIENTSENDMESSAGE("clientsendmessage");
+    
     
     private String action;
 

@@ -79,7 +79,7 @@ class ClientHandle extends Thread {
             SendClients send = new SendClients();
             while (true) {
                 ObjectInputStream objInputStream = new ObjectInputStream(socketReceiver.getInputStream());
-                Object objReceiver = objInputStream.readObject();
+                Object objReceiver = objInputStream.readObject(); //#1
                 
                 if (objReceiver == null) {
                     continue;
@@ -93,7 +93,7 @@ class ClientHandle extends Thread {
                     if (!Server.listActive.containsKey(content.fromPort)) {
                         Server.listActive.put(content.fromPort, content.username);
                     }
-                    send.run();
+                    send.run(ActionEnum.FIRSTCALL.getAction());
                     continue;
                 }
                 
@@ -126,7 +126,7 @@ class ClientHandle extends Thread {
                         Server.listActive.put(content.fromPort, content.username);
                     }
                     // send list
-                    send.run();
+                    send.run(ActionEnum.UPDATEACTIVES.getAction());
                     
                     System.out.println("Server> " + content.username + ": " + content.message);
                     
@@ -136,7 +136,7 @@ class ClientHandle extends Thread {
                         if (content.toPort == client.getPort() || content.fromPort == client.getPort()) {
                             System.out.println("Server> send");
                             ObjectOutputStream objOutputStream = new ObjectOutputStream(client.getOutputStream());
-                            objOutputStream.writeObject(ActionEnum.SENDMESSAGE.getAction());
+                            objOutputStream.writeObject(ActionEnum.SERVERSENDMESSAGE.getAction());
                             objOutputStream.writeObject(content);
                             objOutputStream.flush();
                         }
@@ -151,11 +151,11 @@ class ClientHandle extends Thread {
 }
 
 class SendClients {
-    public void run() {
+    public void run(String typeAction) {
         try {
             for (Socket client: Server.listSocket) {
                 ObjectOutputStream objOutputStream = new ObjectOutputStream(client.getOutputStream());
-                objOutputStream.writeObject(ActionEnum.UPDATEACTIVES.getAction());
+                objOutputStream.writeObject(typeAction);
                 objOutputStream.writeObject(Server.listActive);
                 objOutputStream.flush();
             }
