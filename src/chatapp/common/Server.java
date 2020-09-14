@@ -97,43 +97,49 @@ class ClientHandle extends Thread {
                     continue;
                 }
                 
-                Content content = (Content) objReceiver;
+//                Content content = (Content) objReceiver;
                 // client exit
-                if (content.action.equals(ActionEnum.EXITCHAT.getAction())) {
-                    //remove in list active
-                    if (Server.listActive.containsKey(content.fromPort)) {
-                        Server.listActive.remove(content.fromPort);
+//                if (content.action.equals(ActionEnum.EXITCHAT.getAction())) {
+//                    //remove in list active
+//                    if (Server.listActive.containsKey(content.fromPort)) {
+//                        Server.listActive.remove(content.fromPort);
+//                    }
+//                    //remove in list socket client
+//                    for (Socket client: Server.listSocket) {
+//                        if (content.fromPort == client.getPort()) {
+//                            Server.listSocket.remove(client);
+//                        }
+//                    }
+//                    
+//                    // send list
+//                    send.run();
+//                    break;   
+//                }
+//                System.out.println("Server> " + content.username + ": " + content.message);
+                
+                
+                
+                if (action.equals(ActionEnum.CLIENTSENDMESSAGE.getAction())) {
+                    Content content = (Content) objInputStream.readObject();
+                    //add list active
+                    if (!Server.listActive.containsKey(content.fromPort)) {
+                        Server.listActive.put(content.fromPort, content.username);
                     }
-                    //remove in list socket client
-                    for (Socket client: Server.listSocket) {
-                        if (content.fromPort == client.getPort()) {
-                            Server.listSocket.remove(client);
-                        }
-                    }
-                    
                     // send list
                     send.run();
-                    break;   
-                }
-                System.out.println("Server> " + content.username + ": " + content.message);
-                
-                //add list active
-                if (!Server.listActive.containsKey(content.fromPort)) {
-                    Server.listActive.put(content.fromPort, content.username);
-                }
-                
-                // send list
-                send.run();
-                
-                // send for client
-                for (Socket client: Server.listSocket) {
-                    System.out.println("Server> clientPort:" + client.getPort() + " >fromPort: " + content.fromPort + " >toPort: " + content.toPort);
-                    if (content.toPort == client.getPort() || content.fromPort == client.getPort()) {
-                        System.out.println("Server> send");
-                        ObjectOutputStream objOutputStream = new ObjectOutputStream(client.getOutputStream());
-                        objOutputStream.writeObject(ActionEnum.SENDMESSAGE.getAction());
-                        objOutputStream.writeObject(content);
-                        objOutputStream.flush();
+                    
+                    System.out.println("Server> " + content.username + ": " + content.message);
+                    
+                    // send for client
+                    for (Socket client: Server.listSocket) {
+                        System.out.println("Server> clientPort:" + client.getPort() + " >fromPort: " + content.fromPort + " >toPort: " + content.toPort);
+                        if (content.toPort == client.getPort() || content.fromPort == client.getPort()) {
+                            System.out.println("Server> send");
+                            ObjectOutputStream objOutputStream = new ObjectOutputStream(client.getOutputStream());
+                            objOutputStream.writeObject(ActionEnum.SENDMESSAGE.getAction());
+                            objOutputStream.writeObject(content);
+                            objOutputStream.flush();
+                        }
                     }
                 }
             }

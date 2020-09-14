@@ -36,6 +36,7 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
     public static Socket socket;
     public static HashMap<Integer, String> listActive;
     public static HashMap<Integer, String> listChat;
+    public static int selectedUser;
     public ObjectInputStream objInputStream;
     public ObjectOutputStream objOutputStream;
     
@@ -93,6 +94,7 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                     if (selected != null) {
                         StringTokenizer strToken = new StringTokenizer(selected , "#");
                         int portUser = Integer.parseInt(strToken.nextToken());
+                        selectedUser = portUser;
                         if (listChat.containsKey(portUser)) {
                             String contentChat = listChat.get(portUser);
                             view_chat.setText(contentChat);
@@ -206,6 +208,7 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
         if (selected != null) {
             StringTokenizer strToken = new StringTokenizer(selected , "#");
             int portUser = Integer.parseInt(strToken.nextToken());
+            selectedUser = portUser;
             if (listChat.containsKey(portUser)) {
                 String content = listChat.get(portUser);
                 view_chat.setText(content);
@@ -223,11 +226,12 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                 Content data = new Content();
                 data.action = "";
                 data.fromPort = ChatView.socket.getLocalPort();
-                data.toPort = Integer.parseInt(message);
+                data.toPort = ChatView.selectedUser;
                 data.message = message;
                 data.username = user.username;
                 
                 objOutputStream = new ObjectOutputStream(ChatView.socket.getOutputStream());
+                objOutputStream.writeObject(ActionEnum.CLIENTSENDMESSAGE.getAction());
                 objOutputStream.writeObject(data);
                 objOutputStream.flush();
                 System.out.println("send");

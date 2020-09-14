@@ -13,6 +13,7 @@ public enum ActionEnum {
     EXITCHAT("exit"),
     FIRSTCALL("firstcall"),
     SENDMESSAGE("sendmessage"),
+    CLIENTSENDMESSAGE("clientsendmessage"),
     UPDATEACTIVES("updateactives");
     
     private String action;
