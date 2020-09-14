@@ -5,13 +5,18 @@
  */
 package chatapp.view;
 
+import chatapp.actionEnum.ActionEnum;
 import chatapp.model.User;
 import chatapp.common.Client;
+import chatapp.model.Content;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,34 +26,85 @@ import javax.swing.DefaultListModel;
  *
  * @author Dell
  */
-public class ChatView extends javax.swing.JFrame {
+public class ChatView extends javax.swing.JFrame implements Runnable{
 
     /**
      * Creates new form ChatView
      */
     public static User user;
     public int serverPort = 12345;
-    public Socket socket;
-    public static Client client;
-    public int clientPortId;
-    public static HashMap listTextChat;
-    public static String prevPortSelected = "";
+    public static Socket socket;
+    public static HashMap<Integer, String> listActive;
+    public static HashMap<Integer, String> listChat;
+    public ObjectInputStream objInputStream;
+    public ObjectOutputStream objOutputStream;
     
-    public ChatView(User user) throws IOException {
+    public ChatView(User _user) throws IOException {
         initComponents();
-        // create socket client
-        Socket _socket = new Socket(InetAddress.getLocalHost(), serverPort);
-        Client _client = new Client(_socket);
-        HashMap<String, String> _listTextChat = new HashMap<String, String>();
+        ChatView.user = _user;
+    }
+    
+    @SuppressWarnings("unchecked")
+    @Override
+    public void run() {
+        try {
+            Socket _socket = new Socket(InetAddress.getLocalHost(), serverPort);
+            ChatView.socket = _socket;
+
+            objOutputStream = new ObjectOutputStream(ChatView.socket.getOutputStream());
+            Content first = new Content();
+            first.action = "first";
+            first.fromPort = ChatView.socket.getLocalPort();
+            first.toPort = 0;
+            first.message = "";
+            first.username = user.username;
+            
+            objOutputStream.writeObject(ActionEnum.FIRSTCALL.getAction());
+            objOutputStream.writeObject(first);
+            objOutputStream.flush();
+            
+            DefaultListModel defaultListModel = new DefaultListModel();
+            listChat = new HashMap<Integer, String>();
+            
+            ChatView.loadActive(defaultListModel);
+            
+            while (true) {
+                ChatView.loadActive(defaultListModel);
+                
+                //setup content
+                ObjectInputStream objContent = new ObjectInputStream(ChatView.socket.getInputStream());
+                String actionContent = String.valueOf(objContent);
+                if (ActionEnum.SENDMESSAGE.equals(actionContent)) {
+                    Content content = (Content) objContent.readObject();
+                    boolean differentUserCurrent = content.fromPort != ChatView.socket.getLocalPort();
+
+                    if (!listChat.containsKey(content.fromPort)) {
+                        listChat.put(content.fromPort, content.message + "\n");
+                        continue;
+                    }
+
+                    if (listChat.containsKey(content.fromPort)) {
+                        String oldChat = listChat.get(content.fromPort);
+                        String newChat = oldChat + content.message + "\n";
+                        listChat.replace(content.fromPort, oldChat, newChat);
+                    }
+
+                    String selected = selected = list_user.getSelectedValue();
+                    if (selected != null) {
+                        StringTokenizer strToken = new StringTokenizer(selected , "#");
+                        int portUser = Integer.parseInt(strToken.nextToken());
+                        if (listChat.containsKey(portUser)) {
+                            String contentChat = listChat.get(portUser);
+                            view_chat.setText(contentChat);
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(ChatView.class.getName()).log(Level.SEVERE, null, ex);
+        }
         
-        //first call
-        _client.read();
-        
-        this.user = user;
-        this.socket = _socket;
-        this.client = _client;
-        this.clientPortId = _socket.getLocalPort();
-        this.listTextChat = _listTextChat;
     }
 
     /**
@@ -109,20 +165,19 @@ public class ChatView extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 95, Short.MAX_VALUE)
-                    .addComponent(btn_load_active, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(btn_load_active, javax.swing.GroupLayout.PREFERRED_SIZE, 95, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 133, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(txt_chat, javax.swing.GroupLayout.PREFERRED_SIZE, 232, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(txt_chat, javax.swing.GroupLayout.PREFERRED_SIZE, 209, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btn_send, javax.swing.GroupLayout.DEFAULT_SIZE, 80, Short.MAX_VALUE))
-                    .addComponent(jScrollPane2)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(btn_load_chat)))
-                .addContainerGap())
+                        .addComponent(btn_send, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(btn_load_chat, javax.swing.GroupLayout.Alignment.TRAILING)
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 328, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -132,7 +187,7 @@ public class ChatView extends javax.swing.JFrame {
                     .addComponent(btn_load_active)
                     .addComponent(btn_load_chat))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 202, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -150,84 +205,83 @@ public class ChatView extends javax.swing.JFrame {
         String selected = selected = list_user.getSelectedValue();
         if (selected != null) {
             StringTokenizer strToken = new StringTokenizer(selected , "#");
-            strToken.nextToken();
-            String portUser = strToken.nextToken();
-//            if (!prevPortSelected.equals("")) {
-//                String fullText = view_chat.getText();
-//                listTextChat.remove(prevPortSelected);
-//                listTextChat.put(prevPortSelected, fullText);
-//            }
-            if (!portUser.equals("")) {
-                String val = (String) listTextChat.get(portUser);
-                view_chat.setText(val);
+            int portUser = Integer.parseInt(strToken.nextToken());
+            if (listChat.containsKey(portUser)) {
+                String content = listChat.get(portUser);
+                view_chat.setText(content);
             }
         }
     }//GEN-LAST:event_list_userMouseClicked
 
     private void btn_sendActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_sendActionPerformed
         try {
-            String textChat = txt_chat.getText();
-            String selected = selected = list_user.getSelectedValue();
-            if (!textChat.equals("") && selected != null) {
-                StringTokenizer strToken = new StringTokenizer(selected , "#");
-                //
-                strToken.nextToken();
-                String portReciver = strToken.nextToken();
-                System.out.println("client > portReciver: " + portReciver);
-                //
-                String message = textChat + "#" + user.username + "#" + portReciver;
-                client.send(message);
+            String message = txt_chat.getText();
+            String selected = list_user.getSelectedValue();
+            
+//            if (!message.equals("") && selected != null) {
+            if (!message.equals("")) {
+                Content data = new Content();
+                data.action = "";
+                data.fromPort = ChatView.socket.getLocalPort();
+                data.toPort = Integer.parseInt(message);
+                data.message = message;
+                data.username = user.username;
+                
+                objOutputStream = new ObjectOutputStream(ChatView.socket.getOutputStream());
+                objOutputStream.writeObject(data);
+                objOutputStream.flush();
+                System.out.println("send");
             }
-        } catch (IOException e) {
-            //
+        } catch (IOException | NumberFormatException e) {
         }
+        
         
     }//GEN-LAST:event_btn_sendActionPerformed
 
     private void btn_load_activeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_load_activeActionPerformed
-        try {
-            client.send("load@Active#");
-            Thread.sleep(300);
-            String listPostId = client.read();
-            if (listPostId != null) {
-                StringTokenizer strToken = new StringTokenizer(listPostId , "#");
-                ArrayList<String> list = new ArrayList();
-                while(strToken.hasMoreTokens()) {
-                    list.add(strToken.nextToken());
-                }
-                DefaultListModel defaultListModel = new DefaultListModel();
-                defaultListModel.removeAllElements();
-                if (list.get(0).equals("list@Active")) {
-                    int i = 1;
-                    while(i < list.size()) {
-                        defaultListModel.addElement("User#" + list.get(i));
-                        i++;
-                    }
-                }
-                list_user.setModel(defaultListModel);
-            }
-        } catch (IOException ex) {
-            //
-        } catch (InterruptedException ex) {
-            //
-        }
+//        try {
+//            client.send("load@Active#");
+//            Thread.sleep(300);
+//            String listPostId = client.read();
+//            if (listPostId != null) {
+//                StringTokenizer strToken = new StringTokenizer(listPostId , "#");
+//                ArrayList<String> list = new ArrayList();
+//                while(strToken.hasMoreTokens()) {
+//                    list.add(strToken.nextToken());
+//                }
+//                DefaultListModel defaultListModel = new DefaultListModel();
+//                defaultListModel.removeAllElements();
+//                if (list.get(0).equals("list@Active")) {
+//                    int i = 1;
+//                    while(i < list.size()) {
+//                        defaultListModel.addElement("User#" + list.get(i));
+//                        i++;
+//                    }
+//                }
+//                list_user.setModel(defaultListModel);
+//            }
+//        } catch (IOException ex) {
+//            //
+//        } catch (InterruptedException ex) {
+//            //
+//        }
         
     }//GEN-LAST:event_btn_load_activeActionPerformed
 
     private void btn_load_chatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_load_chatActionPerformed
-        try {
-            this.loadChat();
-        } catch (IOException ex) {
-            Logger.getLogger(ChatView.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InterruptedException ex) {
-            Logger.getLogger(ChatView.class.getName()).log(Level.SEVERE, null, ex);
-        }
+//        try {
+//            this.loadChat();
+//        } catch (IOException ex) {
+//            Logger.getLogger(ChatView.class.getName()).log(Level.SEVERE, null, ex);
+//        } catch (InterruptedException ex) {
+//            Logger.getLogger(ChatView.class.getName()).log(Level.SEVERE, null, ex);
+//        }
     }//GEN-LAST:event_btn_load_chatActionPerformed
 
     /**
      * @param args the command line arguments
      */
-    public static void main(String args[]) throws IOException, InterruptedException {
+    public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
@@ -262,35 +316,57 @@ public class ChatView extends javax.swing.JFrame {
             }
         });
         
-        loadChat();
+//        loadChat();
+    }
+    
+    public static void loadActive(DefaultListModel defaultListModel) {
+        try {
+            ObjectInputStream objInputStream = new ObjectInputStream(ChatView.socket.getInputStream());
+            Object receiverAction = objInputStream.readObject(); //#message 1
+            if (receiverAction != null) {
+                //setup users active
+                String action = String.valueOf(receiverAction);
+                if (action.equals(ActionEnum.UPDATEACTIVES.getAction())) {
+                    ChatView.listActive = (HashMap<Integer, String>) objInputStream.readObject(); //#message 2
+                }
+                defaultListModel.removeAllElements();
+                for (Map.Entry userActive: listActive.entrySet()) {
+                    defaultListModel.addElement(String.valueOf(userActive.getKey()) + "#" + userActive.getValue());
+                }
+                list_user.setModel(defaultListModel);
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            //
+        }
+        
     }
     
     public static void loadChat() throws IOException, InterruptedException {
-        while(true) {
-            String listen = client.read();
-            if (listen != null) {
-                StringTokenizer strToken = new StringTokenizer(listen , "#");
-                String key = strToken.nextToken();
-                if (!key.equals("list@Active") && key != null) {
-                    String key1 = strToken.nextToken();
-                    String mess = strToken.nextToken();
-                    System.out.println("append: " + mess);
-                    
-                    if (Integer.parseInt(key) != clientPortId) {
-                    
-                    }
-                    if (key1 != localPort) {
-                    
-                    }
-                    String oldChat = (String) listTextChat.get(key);
-                    listTextChat.remove(key);
-                    listTextChat.put(key, oldChat + mess + "\n");
-                    break;
-                }
-            }
-            System.out.println("append:");
-            Thread.sleep(300);
-        }
+//        while(true) {
+//            String listen = client.read();
+//            if (listen != null) {
+//                StringTokenizer strToken = new StringTokenizer(listen , "#");
+//                String key = strToken.nextToken();
+//                if (!key.equals("list@Active") && key != null) {
+//                    String key1 = strToken.nextToken();
+//                    String mess = strToken.nextToken();
+//                    System.out.println("append: " + mess);
+//                    
+////                    if (Integer.parseInt(key) != clientPortId) {
+////                    
+////                    }
+////                    if (key1 != localPort) {
+////                    
+////                    }
+//                    String oldChat = (String) listTextChat.get(key);
+//                    listTextChat.remove(key);
+//                    listTextChat.put(key, oldChat + mess + "\n");
+//                    break;
+//                }
+//            }
+//            System.out.println("append:");
+//            Thread.sleep(300);
+//        }
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -299,7 +375,7 @@ public class ChatView extends javax.swing.JFrame {
     private javax.swing.JButton btn_send;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
-    private javax.swing.JList<String> list_user;
+    private static javax.swing.JList<String> list_user;
     private javax.swing.JTextField txt_chat;
     private static javax.swing.JTextArea view_chat;
     // End of variables declaration//GEN-END:variables

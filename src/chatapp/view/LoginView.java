@@ -131,6 +131,8 @@ public class LoginView extends javax.swing.JFrame {
             }
             this.dispose();
             ChatView chat = new ChatView(user);
+            Thread thread = new Thread(chat); 
+            thread.start();
             chat.setVisible(true);
             
         } catch (IOException | ClassNotFoundException ex) {

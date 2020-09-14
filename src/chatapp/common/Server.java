@@ -5,25 +5,27 @@
  */
 package chatapp.common;
 
+import chatapp.actionEnum.ActionEnum;
+import chatapp.model.Content;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.StringTokenizer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
  * @author Dell
  */
 public class Server {
-    private int port;
-    public static ArrayList<ClientHandle> listClient;
+    final int port;
     public static ArrayList<Socket> listSocket;
-    public static String listPortId;
+    public static HashMap<Integer, String> listActive;
     
     public Server(int port) {
         this.port = port;
@@ -38,12 +40,9 @@ public class Server {
             Socket socket = server.accept();
             
             int clientPortId = socket.getPort();
-            
+            System.out.println("clientPortId: " + clientPortId);
             //server đọc data từ client và xử lý sau đó gửi đi
             ClientHandle handle = new ClientHandle(socket, clientPortId);
-            
-            //thêm vào danh sách show active
-            listPortId += String.valueOf(clientPortId) + "#";
             listSocket.add(socket);
             
             //start thread
@@ -53,69 +52,106 @@ public class Server {
     
     //main
     public static void main(String[] agrs) throws IOException {
-        Server.listClient = new ArrayList();
         Server.listSocket = new ArrayList();
-        Server.listPortId = "list@Active#";
+        Server.listActive = new <Integer, String>HashMap();
         Server server = new Server(12345);
         server.start();
     }
 }
 
 class ClientHandle extends Thread {
-    public Socket server;
+//    public Socket server;
+    public Socket socketReceiver;
     public int clientPortId;
     
-    public ClientHandle(Socket server, int clientPortId) {
-        this.server = server;
+//    public ClientHandle(Socket server, int clientPortId) {
+//        this.server = server;
+//        this.clientPortId = clientPortId;
+//    
+    public ClientHandle(Socket socketReceiver, int clientPortId) {
+        this.socketReceiver = socketReceiver;
         this.clientPortId = clientPortId;
     }
     
     @Override
     public void run() {
-        DataInputStream dis = null;
-        DataOutputStream dos = null;
         try {
-            dis = new DataInputStream(server.getInputStream());
-            String received, mess, userName;
-            int portId;
-            while(true) {
-                //đọc tin nhắn từ client
-                received  = dis.readUTF();
-                StringTokenizer arrStrMessage = new StringTokenizer(received , "#");
-                mess = arrStrMessage.nextToken(); 
+            SendClients send = new SendClients();
+            while (true) {
+                ObjectInputStream objInputStream = new ObjectInputStream(socketReceiver.getInputStream());
+                Object objReceiver = objInputStream.readObject();
                 
-                if (mess.equals("load@Active")) {
-                    SendClients send = new SendClients();
-                    send.send();
-                } else {
-                    userName = arrStrMessage.nextToken();
-                    portId = Integer.parseInt(arrStrMessage.nextToken());
+                if (objReceiver == null) {
+                    continue;
+                }
+                
+                String action = String.valueOf(objReceiver);
+                if (action.equals(ActionEnum.FIRSTCALL.getAction())) {
+                    System.out.println("First call");
+                    Content content = (Content) objInputStream.readObject();
+                    //add list active
+                    if (!Server.listActive.containsKey(content.fromPort)) {
+                        Server.listActive.put(content.fromPort, content.username);
+                    }
+                    send.run();
+                    continue;
+                }
+                
+                Content content = (Content) objReceiver;
+                // client exit
+                if (content.action.equals(ActionEnum.EXITCHAT.getAction())) {
+                    //remove in list active
+                    if (Server.listActive.containsKey(content.fromPort)) {
+                        Server.listActive.remove(content.fromPort);
+                    }
+                    //remove in list socket client
                     for (Socket client: Server.listSocket) {
-                        int portReciver = client.getPort();
-                        System.out.println("Server read > client: " + portId + "> to: " + portReciver);
-                        System.out.println("Server read1 > client: " + clientPortId + "> to: " + portReciver);
-                        if (portReciver == portId || portReciver == clientPortId) {
-                            System.out.println("Server send > " + userName + ": " + mess);
-                            dos = new DataOutputStream(client.getOutputStream());
-                            dos.writeUTF(portReciver + "#" + clientPortId + "#" + userName + ": " + mess);
+                        if (content.fromPort == client.getPort()) {
+                            Server.listSocket.remove(client);
                         }
+                    }
+                    
+                    // send list
+                    send.run();
+                    break;   
+                }
+                System.out.println("Server> " + content.username + ": " + content.message);
+                
+                //add list active
+                if (!Server.listActive.containsKey(content.fromPort)) {
+                    Server.listActive.put(content.fromPort, content.username);
+                }
+                
+                // send list
+                send.run();
+                
+                // send for client
+                for (Socket client: Server.listSocket) {
+                    System.out.println("Server> clientPort:" + client.getPort() + " >fromPort: " + content.fromPort + " >toPort: " + content.toPort);
+                    if (content.toPort == client.getPort() || content.fromPort == client.getPort()) {
+                        System.out.println("Server> send");
+                        ObjectOutputStream objOutputStream = new ObjectOutputStream(client.getOutputStream());
+                        objOutputStream.writeObject(ActionEnum.SENDMESSAGE.getAction());
+                        objOutputStream.writeObject(content);
+                        objOutputStream.flush();
                     }
                 }
             }
-            
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             //
         }
+        
     }
 }
 
 class SendClients {
-    public void send() {
+    public void run() {
         try {
             for (Socket client: Server.listSocket) {
-                DataOutputStream dos = new DataOutputStream(client.getOutputStream());
-                System.out.println("Server gui list id");
-                dos.writeUTF(Server.listPortId);
+                ObjectOutputStream objOutputStream = new ObjectOutputStream(client.getOutputStream());
+                objOutputStream.writeObject(ActionEnum.UPDATEACTIVES.getAction());
+                objOutputStream.writeObject(Server.listActive);
+                objOutputStream.flush();
             }
         } catch (IOException e) {
             //
