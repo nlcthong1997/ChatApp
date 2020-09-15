@@ -68,8 +68,6 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
             DefaultListModel defaultListModel = new DefaultListModel();
             ChatView.listChat = new HashMap<String, String>();
             
-//            ChatView.loadActive(defaultListModel);
-            
             while (true) {
                 String action = ChatView.loadActive(defaultListModel);
                 
@@ -111,10 +109,14 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                         for (Map.Entry userActive: listActive.entrySet()) {
                             if (userActive.getKey().equals(content.toPort)) {
                                 ChatView.list_user.setSelectedIndex(index);
+                                ChatView.selectedUser = (int) userActive.getKey();
                             }
-                            index++;
+                            if (!userActive.getKey().equals(ChatView.socket.getLocalPort())) {
+                                index++;
+                            }
                         }
-                        System.out.println("current sle: " + list_user.getSelectedValue());
+                        System.out.println("server > yourself: " + list_user.getSelectedValue());
+                        System.out.println("yourself > selectedUser: " + ChatView.selectedUser);
                         String contentChat;
                         if (ChatView.listChat.containsKey(key)) {
                             contentChat = listChat.get(key);
@@ -122,8 +124,8 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                             contentChat = listChat.get(reverseKey);
                         }
                         view_chat.setText(contentChat);
-                    } else { 
-                        // server send for user receiver
+                        
+                    } else { // server send for user receiver
                         int index = 0;
                         int selected = 0;
                         // user focus
@@ -131,8 +133,11 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                             if (userActive.getKey().equals(ChatView.selectedUser)) {
                                 ChatView.list_user.setSelectedIndex(index);
                                 selected = (int) userActive.getKey();
+                                ChatView.selectedUser = (int) userActive.getKey();
                             }
-                            index++;
+                            if (!userActive.getKey().equals(ChatView.socket.getLocalPort())) {
+                                index++;
+                            }
                         }
                         if (selected != 0) {
                             String keyLoad = selected + "#" + String.valueOf(ChatView.socket.getLocalPort()) + "#";
@@ -144,7 +149,8 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                                 contentChat = listChat.get(reverseKeyLoad);
                             }
                             view_chat.setText(contentChat);
-                            System.out.println("ne sle: " + list_user.getSelectedValue());
+                            System.out.println("server > receiver: " + list_user.getSelectedValue());
+                            System.out.println("receiver > selectedUser: " + ChatView.selectedUser);
                         }
                         
                     }
@@ -175,6 +181,9 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
         username = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setMaximumSize(new java.awt.Dimension(581, 404));
+        setMinimumSize(new java.awt.Dimension(581, 404));
+        setResizable(false);
 
         list_user.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -198,39 +207,37 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(username)
+                .addGap(33, 33, 33))
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 133, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(txt_chat, javax.swing.GroupLayout.PREFERRED_SIZE, 209, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(btn_send, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                            .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 328, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(username)
-                        .addGap(33, 33, 33))))
+                        .addComponent(txt_chat)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btn_send, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 411, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(21, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap()
+                .addGap(18, 18, 18)
                 .addComponent(username)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 29, Short.MAX_VALUE)
+                .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 202, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(txt_chat)
-                            .addComponent(btn_send, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 251, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap())
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 298, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(txt_chat, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(btn_send, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(jScrollPane1))
+                .addGap(20, 20, 20))
         );
 
         pack();
@@ -253,9 +260,12 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
             if (ChatView.listChat.containsKey(reverseKey)) {
                 keyTemp = reverseKey;
             }
+            System.out.println(">click list user: " + keyTemp);
             if (listChat.containsKey(keyTemp)) {
                 String content = listChat.get(keyTemp);
                 view_chat.setText(content);
+            } else {
+                view_chat.setText("");
             }
         }
     }//GEN-LAST:event_list_userMouseClicked
