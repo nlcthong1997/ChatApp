@@ -139,6 +139,10 @@ class ClientHandle extends Thread {
                             objOutputStream.writeObject(ActionEnum.SERVERSENDMESSAGE.getAction());
                             objOutputStream.writeObject(content);
                             objOutputStream.flush();
+                        } else {
+                            ObjectOutputStream objOutputStream = new ObjectOutputStream(client.getOutputStream());
+                            objOutputStream.writeObject(ActionEnum.CONTINUE.getAction());
+                            objOutputStream.flush();
                         }
                     }
                 }
