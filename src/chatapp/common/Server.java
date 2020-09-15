@@ -78,6 +78,7 @@ class ClientHandle extends Thread {
         try {
             SendClients send = new SendClients();
             while (true) {
+                //block 1
                 ObjectInputStream objInputStream = new ObjectInputStream(socketReceiver.getInputStream());
                 Object objReceiver = objInputStream.readObject(); //#1
                 
@@ -97,28 +98,34 @@ class ClientHandle extends Thread {
                     continue;
                 }
                 
-//                Content content = (Content) objReceiver;
                 // client exit
-//                if (content.action.equals(ActionEnum.EXITCHAT.getAction())) {
-//                    //remove in list active
-//                    if (Server.listActive.containsKey(content.fromPort)) {
-//                        Server.listActive.remove(content.fromPort);
-//                    }
-//                    //remove in list socket client
-//                    for (Socket client: Server.listSocket) {
-//                        if (content.fromPort == client.getPort()) {
-//                            Server.listSocket.remove(client);
-//                        }
-//                    }
-//                    
-//                    // send list
-//                    send.run();
-//                    break;   
-//                }
-//                System.out.println("Server> " + content.username + ": " + content.message);
+                if (action.equals(ActionEnum.EXITCHAT.getAction())) {
+                    //remove in list active
+                    Object obj = objInputStream.readObject();
+                    int port = Integer.parseInt((String) obj);
+                    if (Server.listActive.containsKey(port)) {
+                        Server.listActive.remove(port);
+                    }
+                    //remove in list socket client
+                    for (Socket client: Server.listSocket) {
+                        if (port == client.getPort()) {
+                            Server.listSocket.remove(client);
+                        }
+                    }
+                    
+                    // send list
+                    send.run(ActionEnum.EXITCHAT.getAction());
+                    
+                    for (Socket client: Server.listSocket) {
+                        ObjectOutputStream objOutputStream = new ObjectOutputStream(client.getOutputStream());
+                        objOutputStream.writeObject(port);
+                        objOutputStream.flush();
+                    }
+                    continue;   
+                }
                 
                 
-                
+                // block 2
                 if (action.equals(ActionEnum.CLIENTSENDMESSAGE.getAction())) {
                     Content content = (Content) objInputStream.readObject();
                     //add list active

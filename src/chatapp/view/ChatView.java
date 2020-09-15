@@ -66,13 +66,34 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
             ChatView.listChat = new HashMap<String, String>();
             
             while (true) {
+                //server send block 1
                 String action = ChatView.loadActive(defaultListModel);
                 
                 if (ActionEnum.FIRSTCALL.getAction().equals(action)) {
                     continue;
                 }
                 
-                //setup content
+                if (ActionEnum.EXITCHAT.getAction().equals(action)) {
+                    ObjectInputStream objExit = new ObjectInputStream(ChatView.socket.getInputStream());
+                    Object receiverExit = objExit.readObject();
+                    
+                    int portExit = Integer.parseInt((String) receiverExit);
+                    String keyExit = String.valueOf(portExit) + "#" + String.valueOf(ChatView.socket.getLocalPort()) + "#";
+                    String reverseKeyExit = String.valueOf(ChatView.socket.getLocalPort()) + "#" + String.valueOf(portExit) + "#";
+                    
+                    //remove list chat
+                    for (Map.Entry chat: listChat.entrySet()) {
+                        if (chat.getKey().equals(keyExit)) {
+                            ChatView.listChat.remove(keyExit);
+                        }
+                        if (chat.getKey().equals(reverseKeyExit)) {
+                            ChatView.listChat.remove(reverseKeyExit);
+                        }
+                    }
+                    continue;
+                }
+                
+                //server send block 2
                 ObjectInputStream objInputContent = new ObjectInputStream(ChatView.socket.getInputStream());
                 Object receiverContent = objInputContent.readObject();
                 
@@ -176,11 +197,17 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
         txt_chat = new javax.swing.JTextField();
         btn_send = new javax.swing.JButton();
         username = new javax.swing.JLabel();
+        btn_dinh_kem = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setMaximumSize(new java.awt.Dimension(581, 404));
-        setMinimumSize(new java.awt.Dimension(581, 404));
+        setMaximumSize(new java.awt.Dimension(609, 404));
+        setMinimumSize(new java.awt.Dimension(609, 404));
         setResizable(false);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt) {
+                formWindowClosing(evt);
+            }
+        });
 
         list_user.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -200,6 +227,13 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
             }
         });
 
+        btn_dinh_kem.setText("...");
+        btn_dinh_kem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_dinh_kemActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -214,11 +248,13 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
+                        .addComponent(btn_dinh_kem, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(txt_chat)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btn_send, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 411, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(21, Short.MAX_VALUE))
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 450, Short.MAX_VALUE))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -232,7 +268,8 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(txt_chat, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(btn_send, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                            .addComponent(btn_send, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(btn_dinh_kem, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addComponent(jScrollPane1))
                 .addGap(20, 20, 20))
         );
@@ -293,6 +330,22 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
         
     }//GEN-LAST:event_btn_sendActionPerformed
 
+    private void btn_dinh_kemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_dinh_kemActionPerformed
+        
+    }//GEN-LAST:event_btn_dinh_kemActionPerformed
+
+    private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
+        try {
+            objOutputStream = new ObjectOutputStream(ChatView.socket.getOutputStream());
+            objOutputStream.writeObject(ActionEnum.EXITCHAT.getAction());
+            objOutputStream.writeObject(ChatView.socket.getLocalPort());
+            objOutputStream.flush();
+            System.out.println("window close");
+        } catch (IOException e) {
+        }
+        
+    }//GEN-LAST:event_formWindowClosing
+
     /**
      * @param args the command line arguments
      */
@@ -341,7 +394,11 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
             if (receiverAction != null) {
                 //setup users active
                 String action = String.valueOf(receiverAction);
-                if (action.equals(ActionEnum.UPDATEACTIVES.getAction()) || action.equals(ActionEnum.FIRSTCALL.getAction())) {
+                if (action.equals(ActionEnum.UPDATEACTIVES.getAction()) || 
+                    action.equals(ActionEnum.FIRSTCALL.getAction()) ||
+                    action.equals(ActionEnum.EXITCHAT.getAction())) 
+                {
+                    // set list active from server
                     ChatView.listActive = (HashMap<Integer, String>) objInputStream.readObject(); //#message 2
                 
                     defaultListModel.removeAllElements();
@@ -358,6 +415,9 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                     if (action.equals(ActionEnum.FIRSTCALL.getAction())) {
                         return ActionEnum.FIRSTCALL.getAction();
                     }
+                    if (action.equals(ActionEnum.EXITCHAT.getAction())) {
+                        return ActionEnum.EXITCHAT.getAction();
+                    }
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
@@ -367,6 +427,7 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btn_dinh_kem;
     private javax.swing.JButton btn_send;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
