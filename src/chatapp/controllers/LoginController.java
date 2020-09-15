@@ -7,11 +7,8 @@ package chatapp.controllers;
 
 import chatapp.common.FileCommon;
 import chatapp.model.User;
-import chatapp.common.Client;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import static java.util.stream.Collectors.toList;

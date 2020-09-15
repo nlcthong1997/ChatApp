@@ -7,19 +7,15 @@ package chatapp.view;
 
 import chatapp.actionEnum.ActionEnum;
 import chatapp.model.User;
-import chatapp.common.Client;
 import chatapp.model.Content;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
 
 /**
@@ -44,6 +40,7 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
         initComponents();
         ChatView.user = _user;
         username.setText(_user.username);
+        view_chat.setEditable(false);
     }
     
     @SuppressWarnings("unchecked")
@@ -286,6 +283,8 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                 objOutputStream.writeObject(ActionEnum.CLIENTSENDMESSAGE.getAction());
                 objOutputStream.writeObject(data);
                 objOutputStream.flush();
+                
+                txt_chat.setText("");
                 System.out.println("send");
             }
         } catch (IOException | NumberFormatException e) {
