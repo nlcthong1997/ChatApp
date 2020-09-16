@@ -8,9 +8,13 @@ package chatapp.view;
 import chatapp.actionEnum.ActionEnum;
 import chatapp.model.User;
 import chatapp.model.Content;
+import chatapp.model.FileInfo;
 import java.awt.HeadlessException;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -39,7 +43,7 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
     public static Socket socket;
     private static HashMap<Integer, String> listActive;
     private static HashMap<String, String> listChat;
-    private static HashMap<String, File> files;
+    private static HashMap<String, FileInfo> files;
     
     public static int selectedUser = 0;
     public ObjectInputStream objInputStream;
@@ -66,7 +70,7 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
             first.toPort = 0;
             first.message = "";
             first.username = user.username;
-            first.file = null;
+            first.fileInfo = null;
             
             objOutputStream.writeObject(ActionEnum.FIRSTCALL.getAction());
             objOutputStream.writeObject(first);
@@ -75,7 +79,7 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
             DefaultListModel defaultListModel = new DefaultListModel();
             DefaultListModel listFileModel = new DefaultListModel();
             ChatView.listChat = new HashMap<String, String>();
-            ChatView.files = new HashMap<String, File>();
+            ChatView.files = new HashMap<String, FileInfo>();
             
             while (true) {
                 //server send block 1
@@ -134,10 +138,10 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                     }
                     
                     // concept: save only file do not exists in session
-                    if (content.file != null) {
-                        String fileName = content.file.getName() + "#";
+                    if (content.fileInfo != null) {
+                        String fileName = content.fileInfo.file.getName() + "#";
                         if (!ChatView.files.containsKey(key + fileName) && !ChatView.files.containsKey(reverseKey + fileName)) {
-                            ChatView.files.put(key + fileName, content.file);
+                            ChatView.files.put(key + fileName, content.fileInfo);
                         }
                     }
                     
@@ -198,8 +202,8 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                     
                     listFileModel.removeAllElements();
                     for (Map.Entry file: files.entrySet()) {
-                        File f = (File) file.getValue();
-                        String name = f.getName();
+                        FileInfo fileInfo = (FileInfo) file.getValue();
+                        String name = fileInfo.file.getName();
                         String keyFileTemp = keyFile + name + "#";
                         String reverseKeyFileTemp = reverseKeyFile + name + "#";
                         if (keyFileTemp.equals(file.getKey()) || reverseKeyFileTemp.equals(file.getKey())) {
@@ -233,7 +237,7 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
         txt_chat = new javax.swing.JTextField();
         btn_send = new javax.swing.JButton();
         username = new javax.swing.JLabel();
-        btn_dinh_kem = new javax.swing.JButton();
+        btn_send_file = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
         jScrollPane3 = new javax.swing.JScrollPane();
         list_file = new javax.swing.JList<>();
@@ -273,10 +277,10 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
         username.setForeground(new java.awt.Color(0, 0, 204));
         username.setHorizontalTextPosition(javax.swing.SwingConstants.RIGHT);
 
-        btn_dinh_kem.setText("...");
-        btn_dinh_kem.addActionListener(new java.awt.event.ActionListener() {
+        btn_send_file.setText("...");
+        btn_send_file.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btn_dinh_kemActionPerformed(evt);
+                btn_send_fileActionPerformed(evt);
             }
         });
 
@@ -317,7 +321,7 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(btn_dinh_kem, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(btn_send_file, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(txt_chat, javax.swing.GroupLayout.PREFERRED_SIZE, 313, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -352,13 +356,13 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                 .addComponent(txt_chat, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addComponent(btn_send, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(btn_dinh_kem, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addComponent(btn_send_file, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addComponent(btn_save, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                     .addComponent(jScrollPane1))
                 .addGap(20, 20, 20))
         );
 
-        btn_dinh_kem.getAccessibleContext().setAccessibleName("File");
+        btn_send_file.getAccessibleContext().setAccessibleName("File");
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -393,8 +397,8 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
             DefaultListModel listFileModel = new DefaultListModel();
             listFileModel.removeAllElements();
             for (Map.Entry file: files.entrySet()) {
-                File f = (File) file.getValue();
-                String name = f.getName();
+                FileInfo fileInfo = (FileInfo) file.getValue();
+                String name = fileInfo.file.getName();
                 String keyFileTemp = key + name + "#";
                 String reverseKeyFileTemp = reverseKey + name + "#";
                 if (keyFileTemp.equals(file.getKey()) || reverseKeyFileTemp.equals(file.getKey())) {
@@ -417,7 +421,7 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                 data.toPort = ChatView.selectedUser;
                 data.message = message;
                 data.username = user.username;
-                data.file = null;
+                data.fileInfo = null;
                 
                 objOutputStream = new ObjectOutputStream(ChatView.socket.getOutputStream());
                 objOutputStream.writeObject(ActionEnum.CLIENTSENDMESSAGE.getAction());
@@ -433,13 +437,26 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
         
     }//GEN-LAST:event_btn_sendActionPerformed
 
-    private void btn_dinh_kemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_dinh_kemActionPerformed
+    private void btn_send_fileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_send_fileActionPerformed
         try {
             if (ChatView.selectedUser != 0) {
                 JFileChooser fc = new JFileChooser();
                 int returnVal = fc.showOpenDialog(openFileChooser);
                 if (returnVal == JFileChooser.APPROVE_OPTION) {
-                    File file = fc.getSelectedFile();
+                    //create file
+                    File file = new File(fc.getSelectedFile().getPath());
+                    //create array byte
+                    byte [] dataBytes  = new byte [(int)file.length()];
+                    //create file stream
+                    FileInputStream fis = new FileInputStream(file);
+                    //create buffer
+                    BufferedInputStream bis = new BufferedInputStream(fis);
+                    // read 0->length into array byte
+                    bis.read(dataBytes, 0, dataBytes.length);
+                    
+                    FileInfo fileInfo = new FileInfo();
+                    fileInfo.file = file;
+                    fileInfo.dataBytes = dataBytes;
 
                     Content data = new Content();
                     data.action = "send-file";
@@ -447,7 +464,7 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                     data.toPort = ChatView.selectedUser;
                     data.message = "send " + file.getName();
                     data.username = user.username;
-                    data.file = file;
+                    data.fileInfo = fileInfo;
 
                     objOutputStream = new ObjectOutputStream(ChatView.socket.getOutputStream());
                     objOutputStream.writeObject(ActionEnum.CLIENTSENDMESSAGE.getAction());
@@ -465,7 +482,7 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
             
         } catch (Exception e) {
         }
-    }//GEN-LAST:event_btn_dinh_kemActionPerformed
+    }//GEN-LAST:event_btn_send_fileActionPerformed
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
         try {
@@ -487,21 +504,29 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
         try {
             String selectedName = list_file.getSelectedValue();
             if (selectedName != null) {
-                File selectedFile = null;
+                FileInfo selectedFile = null;
                 for (Map.Entry file: files.entrySet()) {
-                    File f = (File) file.getValue();
-                    String name = f.getName();
+                    FileInfo fileInfo = (FileInfo) file.getValue();
+                    String name = fileInfo.file.getName();
                     if (selectedName.equals(name)) {
-                        selectedFile = (File) f;
+                        selectedFile = (FileInfo) fileInfo;
                     }
                 }
                 if (selectedFile != null) {
                     JFileChooser fc = new JFileChooser();
-                    fc.setSelectedFile(selectedFile);
+                    // set name file into dialog
+                    fc.setSelectedFile(selectedFile.file);
+                    //opend dialog
                     int returnVal = fc.showSaveDialog(openFileChooser);
-                    if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    if (returnVal == JFileChooser.APPROVE_OPTION) { // clicked save on dialog
                         try {
-                            FileWriter fw = new FileWriter(fc.getSelectedFile());
+                            //create file stream with path get from dialog fc.getSelectedFile()
+                            FileOutputStream fos = new FileOutputStream(fc.getSelectedFile());
+                            //create buffer
+                            BufferedOutputStream bos = new BufferedOutputStream(fos);
+                            //save file
+                            bos.write(selectedFile.dataBytes);
+                            bos.close();
                         } catch (IOException ex) {
                             Logger.getLogger(ChatView.class.getName()).log(Level.SEVERE, null, ex);
                         }
@@ -599,9 +624,9 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton btn_dinh_kem;
     private javax.swing.JButton btn_save;
     private javax.swing.JButton btn_send;
+    private javax.swing.JButton btn_send_file;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JScrollPane jScrollPane1;

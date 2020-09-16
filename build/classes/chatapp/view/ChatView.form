@@ -58,7 +58,7 @@
                       <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="1" max="-2" attributes="0">
                           <Group type="102" attributes="0">
-                              <Component id="btn_dinh_kem" min="-2" pref="37" max="-2" attributes="0"/>
+                              <Component id="btn_send_file" min="-2" pref="37" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="txt_chat" min="-2" pref="313" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
@@ -105,7 +105,7 @@
                           <Group type="103" groupAlignment="3" attributes="0">
                               <Component id="txt_chat" alignment="3" min="-2" pref="46" max="-2" attributes="0"/>
                               <Component id="btn_send" alignment="3" min="-2" pref="46" max="-2" attributes="0"/>
-                              <Component id="btn_dinh_kem" alignment="3" min="-2" pref="46" max="-2" attributes="0"/>
+                              <Component id="btn_send_file" alignment="3" min="-2" pref="46" max="-2" attributes="0"/>
                           </Group>
                           <Component id="btn_save" max="32767" attributes="0"/>
                       </Group>
@@ -183,7 +183,7 @@
         <Property name="horizontalTextPosition" type="int" value="4"/>
       </Properties>
     </Component>
-    <Component class="javax.swing.JButton" name="btn_dinh_kem">
+    <Component class="javax.swing.JButton" name="btn_send_file">
       <Properties>
         <Property name="text" type="java.lang.String" value="..."/>
       </Properties>
@@ -191,7 +191,7 @@
         <Property name="AccessibleContext.accessibleName" type="java.lang.String" value="File"/>
       </AccessibilityProperties>
       <Events>
-        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btn_dinh_kemActionPerformed"/>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btn_send_fileActionPerformed"/>
       </Events>
     </Component>
     <Component class="javax.swing.JLabel" name="jLabel1">

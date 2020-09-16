@@ -18,24 +18,24 @@ public class Content implements Serializable {
     public int fromPort;
     public int toPort;
     public String action;
-    public File file;
+    public FileInfo fileInfo;
 
-    public Content(String username, String message, int fromPort, int toPort, String action, File file) {
+    public Content(String username, String message, int fromPort, int toPort, String action, FileInfo file) {
         super();
         this.username = username;
         this.message = message;
         this.fromPort = fromPort;
         this.toPort = toPort;
         this.action = action;
-        this.file = file;
+        this.fileInfo = file;
     }
 
-    public File getFile() {
-        return file;
+    public FileInfo getFile() {
+        return fileInfo;
     }
 
-    public void setFile(File file) {
-        this.file = file;
+    public void setFile(FileInfo file) {
+        this.fileInfo = file;
     }
     
     public Content() {
