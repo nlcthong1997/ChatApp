@@ -15,6 +15,7 @@ public enum ActionEnum {
     UPDATEACTIVES("updateactives"),
     SERVERSENDMESSAGE("serversendmessage"),
     CONTINUE("continue"),
+    SENDFILE("sendfile"),
     CLIENTSENDMESSAGE("clientsendmessage");
     
     

@@ -8,6 +8,9 @@ package chatapp.view;
 import chatapp.actionEnum.ActionEnum;
 import chatapp.model.User;
 import chatapp.model.Content;
+import java.awt.HeadlessException;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -16,7 +19,11 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -32,6 +39,8 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
     public static Socket socket;
     private static HashMap<Integer, String> listActive;
     private static HashMap<String, String> listChat;
+    private static HashMap<String, File> files;
+    
     public static int selectedUser = 0;
     public ObjectInputStream objInputStream;
     public ObjectOutputStream objOutputStream;
@@ -49,21 +58,24 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
         try {
             Socket _socket = new Socket(InetAddress.getLocalHost(), serverPort);
             ChatView.socket = _socket;
-
+            System.out.println("InetAddress.getLocalHost(): " + InetAddress.getLocalHost());
             objOutputStream = new ObjectOutputStream(ChatView.socket.getOutputStream());
             Content first = new Content();
-            first.action = "first";
+            first.action = "first-call";
             first.fromPort = ChatView.socket.getLocalPort();
             first.toPort = 0;
             first.message = "";
             first.username = user.username;
+            first.file = null;
             
             objOutputStream.writeObject(ActionEnum.FIRSTCALL.getAction());
             objOutputStream.writeObject(first);
             objOutputStream.flush();
             
             DefaultListModel defaultListModel = new DefaultListModel();
+            DefaultListModel listFileModel = new DefaultListModel();
             ChatView.listChat = new HashMap<String, String>();
+            ChatView.files = new HashMap<String, File>();
             
             while (true) {
                 //server send block 1
@@ -121,8 +133,17 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                         ChatView.listChat.replace(reverseKey, oldChat, newChat);
                     }
                     
+                    // concept: save only file do not exists in session
+                    if (content.file != null) {
+                        String fileName = content.file.getName() + "#";
+                        if (!ChatView.files.containsKey(key + fileName) && !ChatView.files.containsKey(reverseKey + fileName)) {
+                            ChatView.files.put(key + fileName, content.file);
+                        }
+                    }
+                    
                     // server send it to yourself
                     if (content.fromPort == ChatView.socket.getLocalPort()) {
+                        //handle users active
                         int index = 0;
                         for (Map.Entry userActive: listActive.entrySet()) {
                             if (userActive.getKey().equals(content.toPort)) {
@@ -133,8 +154,7 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                                 index++;
                             }
                         }
-                        System.out.println("server > yourself: " + list_user.getSelectedValue());
-                        System.out.println("yourself > selectedUser: " + ChatView.selectedUser);
+                        // handle message
                         String contentChat;
                         if (ChatView.listChat.containsKey(key)) {
                             contentChat = listChat.get(key);
@@ -153,6 +173,7 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                                 selected = (int) userActive.getKey();
                                 ChatView.selectedUser = (int) userActive.getKey();
                             }
+                            // expect current user
                             if (!userActive.getKey().equals(ChatView.socket.getLocalPort())) {
                                 index++;
                             }
@@ -167,11 +188,25 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
                                 contentChat = listChat.get(reverseKeyLoad);
                             }
                             view_chat.setText(contentChat);
-                            System.out.println("server > receiver: " + list_user.getSelectedValue());
-                            System.out.println("receiver > selectedUser: " + ChatView.selectedUser);
                         }
                         
                     }
+                    
+                    //handle file
+                    String keyFile = ChatView.socket.getLocalPort() + "#" + ChatView.selectedUser + "#";
+                    String reverseKeyFile = ChatView.selectedUser + "#" + ChatView.socket.getLocalPort() + "#";
+                    
+                    listFileModel.removeAllElements();
+                    for (Map.Entry file: files.entrySet()) {
+                        File f = (File) file.getValue();
+                        String name = f.getName();
+                        String keyFileTemp = keyFile + name + "#";
+                        String reverseKeyFileTemp = reverseKeyFile + name + "#";
+                        if (keyFileTemp.equals(file.getKey()) || reverseKeyFileTemp.equals(file.getKey())) {
+                            listFileModel.addElement(name);
+                        }
+                    }
+                    list_file.setModel(listFileModel);
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
@@ -190,6 +225,7 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        openFileChooser = new javax.swing.JFileChooser();
         jScrollPane1 = new javax.swing.JScrollPane();
         list_user = new javax.swing.JList<>();
         jScrollPane2 = new javax.swing.JScrollPane();
@@ -198,8 +234,13 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
         btn_send = new javax.swing.JButton();
         username = new javax.swing.JLabel();
         btn_dinh_kem = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+        jScrollPane3 = new javax.swing.JScrollPane();
+        list_file = new javax.swing.JList<>();
+        jLabel2 = new javax.swing.JLabel();
+        btn_save = new javax.swing.JButton();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
         setMaximumSize(new java.awt.Dimension(609, 404));
         setMinimumSize(new java.awt.Dimension(609, 404));
         setResizable(false);
@@ -220,12 +261,17 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
         view_chat.setRows(5);
         jScrollPane2.setViewportView(view_chat);
 
+        btn_send.setBackground(new java.awt.Color(0, 102, 204));
         btn_send.setText("Send");
         btn_send.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btn_sendActionPerformed(evt);
             }
         });
+
+        username.setFont(new java.awt.Font("Tahoma", 1, 12)); // NOI18N
+        username.setForeground(new java.awt.Color(0, 0, 204));
+        username.setHorizontalTextPosition(javax.swing.SwingConstants.RIGHT);
 
         btn_dinh_kem.setText("...");
         btn_dinh_kem.addActionListener(new java.awt.event.ActionListener() {
@@ -234,45 +280,85 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
             }
         });
 
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
+        jLabel1.setText("Users live");
+
+        jScrollPane3.setViewportView(list_file);
+
+        jLabel2.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
+        jLabel2.setText("Files receiver");
+
+        btn_save.setText("Save file");
+        btn_save.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                btn_saveMouseClicked(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(username)
-                .addGap(33, 33, 33))
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 133, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 133, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(9, 9, 9)
+                        .addComponent(jLabel1)))
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(btn_dinh_kem, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(14, 14, 14)
+                        .addComponent(username, javax.swing.GroupLayout.PREFERRED_SIZE, 433, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(txt_chat)
+                        .addComponent(jLabel2)
+                        .addGap(0, 27, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btn_send, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 450, Short.MAX_VALUE))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(btn_dinh_kem, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(txt_chat, javax.swing.GroupLayout.PREFERRED_SIZE, 313, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(btn_send, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 422, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                            .addComponent(btn_save, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGap(18, 18, 18)
-                .addComponent(username)
-                .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 298, Short.MAX_VALUE)
+                        .addGap(14, 14, 14)
+                        .addComponent(username, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel1, javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jLabel2, javax.swing.GroupLayout.Alignment.TRAILING))))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 287, Short.MAX_VALUE)
+                            .addComponent(jScrollPane3))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(txt_chat, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(btn_send, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(btn_dinh_kem, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(txt_chat, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(btn_send, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(btn_dinh_kem, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(btn_save, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                     .addComponent(jScrollPane1))
                 .addGap(20, 20, 20))
         );
+
+        btn_dinh_kem.getAccessibleContext().setAccessibleName("File");
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -288,19 +374,35 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
             String reverseKey = String.valueOf(ChatView.socket.getLocalPort()) + "#" + String.valueOf(portUser) + "#";
             String keyTemp = "";
             
+            //list chat
             if (ChatView.listChat.containsKey(key)) {
                 keyTemp = key;
             }
             if (ChatView.listChat.containsKey(reverseKey)) {
                 keyTemp = reverseKey;
             }
-            System.out.println(">click list user: " + keyTemp);
+            
             if (listChat.containsKey(keyTemp)) {
                 String content = listChat.get(keyTemp);
                 view_chat.setText(content);
             } else {
                 view_chat.setText("");
             }
+            
+            //list file
+            DefaultListModel listFileModel = new DefaultListModel();
+            listFileModel.removeAllElements();
+            for (Map.Entry file: files.entrySet()) {
+                File f = (File) file.getValue();
+                String name = f.getName();
+                String keyFileTemp = key + name + "#";
+                String reverseKeyFileTemp = reverseKey + name + "#";
+                if (keyFileTemp.equals(file.getKey()) || reverseKeyFileTemp.equals(file.getKey())) {
+                    listFileModel.addElement(name);
+                }
+            }
+            list_file.setModel(listFileModel);
+            
         }
     }//GEN-LAST:event_list_userMouseClicked
 
@@ -310,11 +412,12 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
             
             if (!message.equals("") && ChatView.selectedUser != 0) {
                 Content data = new Content();
-                data.action = "";
+                data.action = "send-message";
                 data.fromPort = ChatView.socket.getLocalPort();
                 data.toPort = ChatView.selectedUser;
                 data.message = message;
                 data.username = user.username;
+                data.file = null;
                 
                 objOutputStream = new ObjectOutputStream(ChatView.socket.getOutputStream());
                 objOutputStream.writeObject(ActionEnum.CLIENTSENDMESSAGE.getAction());
@@ -331,20 +434,89 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
     }//GEN-LAST:event_btn_sendActionPerformed
 
     private void btn_dinh_kemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_dinh_kemActionPerformed
-        
+        try {
+            if (ChatView.selectedUser != 0) {
+                JFileChooser fc = new JFileChooser();
+                int returnVal = fc.showOpenDialog(openFileChooser);
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    File file = fc.getSelectedFile();
+
+                    Content data = new Content();
+                    data.action = "send-file";
+                    data.fromPort = ChatView.socket.getLocalPort();
+                    data.toPort = ChatView.selectedUser;
+                    data.message = "send " + file.getName();
+                    data.username = user.username;
+                    data.file = file;
+
+                    objOutputStream = new ObjectOutputStream(ChatView.socket.getOutputStream());
+                    objOutputStream.writeObject(ActionEnum.CLIENTSENDMESSAGE.getAction());
+                    objOutputStream.writeObject(data);
+                    objOutputStream.flush();
+                    
+                } else {
+                    JOptionPane.showMessageDialog(null, "Open choose file fail",
+                        "Choose file fail", JOptionPane.WARNING_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(null, "Please choose user for send file.",
+                        "Choose file fail", JOptionPane.WARNING_MESSAGE);
+            }
+            
+        } catch (Exception e) {
+        }
     }//GEN-LAST:event_btn_dinh_kemActionPerformed
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
         try {
-            objOutputStream = new ObjectOutputStream(ChatView.socket.getOutputStream());
-            objOutputStream.writeObject(ActionEnum.EXITCHAT.getAction());
-            objOutputStream.writeObject(ChatView.socket.getLocalPort());
-            objOutputStream.flush();
-            System.out.println("window close");
+            int confirm = JOptionPane.showConfirmDialog(this, "Ban muon thoat chuong trinh ?", "Thong bao!", JOptionPane.YES_NO_OPTION);
+            if (confirm == 0) {
+                objOutputStream = new ObjectOutputStream(ChatView.socket.getOutputStream());
+                objOutputStream.writeObject(ActionEnum.EXITCHAT.getAction());
+                objOutputStream.writeObject(String.valueOf(ChatView.socket.getLocalPort()));
+                objOutputStream.flush();
+                ChatView.socket.close();
+                this.dispose();
+                System.exit(0);
+            }
         } catch (IOException e) {
         }
-        
     }//GEN-LAST:event_formWindowClosing
+
+    private void btn_saveMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btn_saveMouseClicked
+        try {
+            String selectedName = list_file.getSelectedValue();
+            if (selectedName != null) {
+                File selectedFile = null;
+                for (Map.Entry file: files.entrySet()) {
+                    File f = (File) file.getValue();
+                    String name = f.getName();
+                    if (selectedName.equals(name)) {
+                        selectedFile = (File) f;
+                    }
+                }
+                if (selectedFile != null) {
+                    JFileChooser fc = new JFileChooser();
+                    fc.setSelectedFile(selectedFile);
+                    int returnVal = fc.showSaveDialog(openFileChooser);
+                    if (returnVal == JFileChooser.APPROVE_OPTION) {
+                        try {
+                            FileWriter fw = new FileWriter(fc.getSelectedFile());
+                        } catch (IOException ex) {
+                            Logger.getLogger(ChatView.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(null, "Please choose file need save",
+                            "Choose file", JOptionPane.WARNING_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(null, "Please choose file need save.",
+                            "Choose file", JOptionPane.WARNING_MESSAGE);
+            }
+        } catch (HeadlessException e) {
+        }
+    }//GEN-LAST:event_btn_saveMouseClicked
 
     /**
      * @param args the command line arguments
@@ -428,10 +600,16 @@ public class ChatView extends javax.swing.JFrame implements Runnable{
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btn_dinh_kem;
+    private javax.swing.JButton btn_save;
     private javax.swing.JButton btn_send;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JScrollPane jScrollPane3;
+    private javax.swing.JList<String> list_file;
     private static javax.swing.JList<String> list_user;
+    private javax.swing.JFileChooser openFileChooser;
     private javax.swing.JTextField txt_chat;
     private javax.swing.JLabel username;
     private static javax.swing.JTextArea view_chat;

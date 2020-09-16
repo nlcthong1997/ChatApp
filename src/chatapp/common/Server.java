@@ -7,8 +7,7 @@ package chatapp.common;
 
 import chatapp.actionEnum.ActionEnum;
 import chatapp.model.Content;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -16,7 +15,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.StringTokenizer;
 
 /**
  *
@@ -87,13 +85,16 @@ class ClientHandle extends Thread {
                 }
                 
                 String action = String.valueOf(objReceiver);
+                // when a client connect to server
                 if (action.equals(ActionEnum.FIRSTCALL.getAction())) {
-                    System.out.println("First call");
+                    
                     Content content = (Content) objInputStream.readObject();
                     //add list active
                     if (!Server.listActive.containsKey(content.fromPort)) {
                         Server.listActive.put(content.fromPort, content.username);
                     }
+                    
+                    //send list update users active
                     send.run(ActionEnum.FIRSTCALL.getAction());
                     continue;
                 }
@@ -101,8 +102,10 @@ class ClientHandle extends Thread {
                 // client exit
                 if (action.equals(ActionEnum.EXITCHAT.getAction())) {
                     //remove in list active
-                    Object obj = objInputStream.readObject();
-                    int port = Integer.parseInt((String) obj);
+                    Object objPort = objInputStream.readObject();
+                    String strPort = String.valueOf(objPort);
+                    int port = Integer.parseInt(strPort);
+                    
                     if (Server.listActive.containsKey(port)) {
                         Server.listActive.remove(port);
                     }
@@ -113,17 +116,17 @@ class ClientHandle extends Thread {
                         }
                     }
                     
-                    // send list
+                    // send list update user active
                     send.run(ActionEnum.EXITCHAT.getAction());
                     
+                    // update list client
                     for (Socket client: Server.listSocket) {
                         ObjectOutputStream objOutputStream = new ObjectOutputStream(client.getOutputStream());
-                        objOutputStream.writeObject(port);
+                        objOutputStream.writeObject(strPort);
                         objOutputStream.flush();
                     }
                     continue;   
                 }
-                
                 
                 // block 2
                 if (action.equals(ActionEnum.CLIENTSENDMESSAGE.getAction())) {
@@ -135,13 +138,10 @@ class ClientHandle extends Thread {
                     // send list
                     send.run(ActionEnum.UPDATEACTIVES.getAction());
                     
-                    System.out.println("Server> " + content.username + ": " + content.message);
-                    
-                    // send for client
+                    // send for client message
                     for (Socket client: Server.listSocket) {
-                        System.out.println("Server> clientPort:" + client.getPort() + " >fromPort: " + content.fromPort + " >toPort: " + content.toPort);
+                        
                         if (content.toPort == client.getPort() || content.fromPort == client.getPort()) {
-                            System.out.println("Server> send");
                             ObjectOutputStream objOutputStream = new ObjectOutputStream(client.getOutputStream());
                             objOutputStream.writeObject(ActionEnum.SERVERSENDMESSAGE.getAction());
                             objOutputStream.writeObject(content);

@@ -5,6 +5,7 @@
  */
 package chatapp.model;
 
+import java.io.File;
 import java.io.Serializable;
 
 /**
@@ -17,14 +18,24 @@ public class Content implements Serializable {
     public int fromPort;
     public int toPort;
     public String action;
+    public File file;
 
-    public Content(String username, String message, int fromPort, int toPort, String action) {
+    public Content(String username, String message, int fromPort, int toPort, String action, File file) {
         super();
         this.username = username;
         this.message = message;
         this.fromPort = fromPort;
         this.toPort = toPort;
         this.action = action;
+        this.file = file;
+    }
+
+    public File getFile() {
+        return file;
+    }
+
+    public void setFile(File file) {
+        this.file = file;
     }
     
     public Content() {
