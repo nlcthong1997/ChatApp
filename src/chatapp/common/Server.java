@@ -113,6 +113,7 @@ class ClientHandle extends Thread {
                     for (Socket client: Server.listSocket) {
                         if (port == client.getPort()) {
                             Server.listSocket.remove(client);
+                            break;
                         }
                     }
                     
