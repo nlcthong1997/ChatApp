@@ -5,7 +5,6 @@
  */
 package chatapp.view;
 
-import chatapp.common.Server;
 import chatapp.controllers.LoginController;
 import chatapp.model.User;
 import java.io.IOException;
@@ -53,13 +52,11 @@ public class LoginView extends javax.swing.JFrame {
         lb_tai_khoan.setText("TÀI KHOẢN");
         lb_tai_khoan.setName(""); // NOI18N
 
-        txt_tai_khoan.setText("chithong0");
         txt_tai_khoan.setName(""); // NOI18N
 
         lb_mat_khau.setText("MẬT KHẨU");
         lb_mat_khau.setName(""); // NOI18N
 
-        txt_mat_khau.setText("123456");
         txt_mat_khau.setName(""); // NOI18N
 
         btn_dang_nhap.setText("ĐĂNG NHẬP");

@@ -100,10 +100,10 @@
                       </Group>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="btn_send_file" alignment="0" min="-2" pref="30" max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="3" attributes="0">
                               <Component id="txt_chat" alignment="3" min="-2" pref="30" max="-2" attributes="0"/>
                               <Component id="btn_send" alignment="3" min="-2" pref="30" max="-2" attributes="0"/>
-                              <Component id="btn_send_file" alignment="0" min="-2" pref="30" max="-2" attributes="0"/>
                           </Group>
                           <Component id="btn_save" alignment="0" max="32767" attributes="0"/>
                       </Group>

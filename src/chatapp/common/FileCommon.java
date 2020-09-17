@@ -28,8 +28,12 @@ public class FileCommon {
     
     public static List<User> readUsersFile(String fileName) throws FileNotFoundException, IOException, ClassNotFoundException {
         List<User> users = new ArrayList();
-        ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fileName));
-        users = (List<User>) ois.readObject();
-        return users;
+        try {
+            ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fileName));
+            users = (List<User>) ois.readObject();
+            return users;
+        } catch (IOException | ClassNotFoundException e) {
+            return users;
+        }
     }
 }
