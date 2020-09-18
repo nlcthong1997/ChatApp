@@ -74,7 +74,7 @@ ChatApp
       - At input Main Class, i need choose file <b>LoginView.java</b> and Ok
       - And at menu top: <b>Run > Build Project</b> or (F11)
   
-  * When run file Server.jar, if you want to stop server, you need run command (windows): <b>taskkill /f /im javaw.exe</b>
+  * When run file <b>Server.jar</b>, if you want to stop server, you need run command (windows): <b>taskkill /f /im javaw.exe</b>
 
 
 
