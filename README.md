@@ -67,7 +67,7 @@ ChatApp
       - Choose <b>Run</b> in list menu left
       - At input Main Class, i need choose file <b>Server.java</b> and Ok
       - And at menu top: <b>Run > Clean and Build Project</b> or (Shift + F11)
-  - Next, ưe need to set the executable file for the source to be the <b>LoginView.java</b> file, then we build the source in the jar file
+  - Next, we need to set the executable file for the source to be the <b>LoginView.java</b> file, then we build the source in the jar file
     - step
       - ChatApp click choose <b>Properties</b>
       - Choose <b>Run</b> in list menu left
